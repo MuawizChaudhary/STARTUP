@@ -1,0 +1,148 @@
+EuroSAT
+5-way 1-shot
+Using Split:  datasets/split_seed_1/EuroSAT_labeled_80.csv
+Loading Model:  ../teacher_ImageNet/resnet18/checkpoint.pkl
+Test Acc (50 episodes) = 46.40% +- 2.75%
+Test Acc (100 episodes) = 47.53% +- 2.05%
+Test Acc (150 episodes) = 48.17% +- 1.69%
+Test Acc (200 episodes) = 47.80% +- 1.46%
+Test Acc (250 episodes) = 47.74% +- 1.32%
+Test Acc (300 episodes) = 47.50% +- 1.22%
+Test Acc (350 episodes) = 47.35% +- 1.14%
+Test Acc (400 episodes) = 47.22% +- 1.05%
+Test Acc (450 episodes) = 47.17% +- 1.00%
+Test Acc (500 episodes) = 47.12% +- 0.95%
+Test Acc (550 episodes) = 46.98% +- 0.91%
+Test Acc (600 episodes) = 47.15% +- 0.89%
+600 Test Acc = 47.15% +- 0.89%
+5-way 5-shot
+Using Split:  datasets/split_seed_1/EuroSAT_labeled_80.csv
+Loading Model:  ../teacher_ImageNet/resnet18/checkpoint.pkl
+Test Acc (50 episodes) = 75.36% +- 2.31%
+Test Acc (100 episodes) = 75.35% +- 1.53%
+Test Acc (150 episodes) = 75.39% +- 1.22%
+Test Acc (200 episodes) = 75.59% +- 1.03%
+Test Acc (250 episodes) = 75.40% +- 0.94%
+Test Acc (300 episodes) = 75.56% +- 0.89%
+Test Acc (350 episodes) = 75.44% +- 0.82%
+Test Acc (400 episodes) = 75.59% +- 0.76%
+Test Acc (450 episodes) = 75.51% +- 0.73%
+Test Acc (500 episodes) = 75.34% +- 0.71%
+Test Acc (550 episodes) = 75.45% +- 0.68%
+Test Acc (600 episodes) = 75.31% +- 0.65%
+600 Test Acc = 75.31% +- 0.65%
+5-way 20-shot
+Using Split:  datasets/split_seed_1/EuroSAT_labeled_80.csv
+Loading Model:  ../teacher_ImageNet/resnet18/checkpoint.pkl
+Test Acc (50 episodes) = 88.83% +- 1.38%
+Test Acc (100 episodes) = 88.93% +- 1.02%
+Test Acc (150 episodes) = 88.76% +- 0.82%
+Test Acc (200 episodes) = 88.67% +- 0.72%
+Test Acc (250 episodes) = 88.73% +- 0.64%
+Test Acc (300 episodes) = 88.89% +- 0.58%
+Test Acc (350 episodes) = 88.69% +- 0.56%
+Test Acc (400 episodes) = 88.74% +- 0.51%
+Test Acc (450 episodes) = 88.78% +- 0.49%
+Test Acc (500 episodes) = 88.67% +- 0.47%
+Test Acc (550 episodes) = 88.70% +- 0.44%
+Test Acc (600 episodes) = 88.76% +- 0.42%
+600 Test Acc = 88.76% +- 0.42%
+5-way 50-shot
+Using Split:  datasets/split_seed_1/EuroSAT_labeled_80.csv
+Loading Model:  ../teacher_ImageNet/resnet18/checkpoint.pkl
+         Mean      95CI
+1   47.146667  0.886388
+5   75.308889  0.647715
+20  88.755556  0.420867
+ChestX
+5-way 1-shot
+Using Split:  datasets/split_seed_1/ChestX_labeled_80.csv
+Loading Model:  ../teacher_ImageNet/resnet18/checkpoint.pkl
+Test Acc (50 episodes) = 20.53% +- 1.21%
+Test Acc (100 episodes) = 21.29% +- 0.83%
+Test Acc (150 episodes) = 21.09% +- 0.64%
+Test Acc (200 episodes) = 21.47% +- 0.58%
+Test Acc (250 episodes) = 21.83% +- 0.53%
+Test Acc (300 episodes) = 22.00% +- 0.49%
+Test Acc (350 episodes) = 22.01% +- 0.45%
+Test Acc (400 episodes) = 22.02% +- 0.42%
+Test Acc (450 episodes) = 22.12% +- 0.40%
+Test Acc (500 episodes) = 22.04% +- 0.38%
+Test Acc (550 episodes) = 21.99% +- 0.36%
+Test Acc (600 episodes) = 21.99% +- 0.35%
+600 Test Acc = 21.99% +- 0.35%
+5-way 5-shot
+Using Split:  datasets/split_seed_1/ChestX_labeled_80.csv
+Loading Model:  ../teacher_ImageNet/resnet18/checkpoint.pkl
+Test Acc (50 episodes) = 24.16% +- 1.43%
+Test Acc (100 episodes) = 24.35% +- 0.97%
+Test Acc (150 episodes) = 24.54% +- 0.79%
+Test Acc (200 episodes) = 24.83% +- 0.74%
+Test Acc (250 episodes) = 24.94% +- 0.64%
+Test Acc (300 episodes) = 25.03% +- 0.59%
+Test Acc (350 episodes) = 25.07% +- 0.54%
+Test Acc (400 episodes) = 25.18% +- 0.51%
+Test Acc (450 episodes) = 25.21% +- 0.48%
+Test Acc (500 episodes) = 25.14% +- 0.46%
+Test Acc (550 episodes) = 25.13% +- 0.43%
+Test Acc (600 episodes) = 25.18% +- 0.42%
+600 Test Acc = 25.18% +- 0.42%
+5-way 20-shot
+Using Split:  datasets/split_seed_1/ChestX_labeled_80.csv
+Loading Model:  ../teacher_ImageNet/resnet18/checkpoint.pkl
+Test Acc (50 episodes) = 32.13% +- 1.26%
+Test Acc (100 episodes) = 32.32% +- 1.04%
+Test Acc (150 episodes) = 32.73% +- 0.86%
+Test Acc (200 episodes) = 32.86% +- 0.75%
+Test Acc (250 episodes) = 32.69% +- 0.68%
+Test Acc (300 episodes) = 32.82% +- 0.64%
+Test Acc (350 episodes) = 32.94% +- 0.60%
+Test Acc (400 episodes) = 32.99% +- 0.56%
+Test Acc (450 episodes) = 32.94% +- 0.53%
+Test Acc (500 episodes) = 32.82% +- 0.50%
+Test Acc (550 episodes) = 32.85% +- 0.48%
+Test Acc (600 episodes) = 32.78% +- 0.46%
+600 Test Acc = 32.78% +- 0.46%
+5-way 50-shot
+Using Split:  datasets/split_seed_1/ChestX_labeled_80.csv
+Loading Model:  ../teacher_ImageNet/resnet18/checkpoint.pkl
+         Mean      95CI
+1   21.993333  0.353712
+5   25.175556  0.416630
+20  32.784444  0.458634
+EuroSAT
+5-way 1-shot
+Using Split:  datasets/split_seed_1/EuroSAT_labeled_80.csv
+Loading Model:  /home/muawiz/fewshot_medical_imaging/STARTUP/teacher_miniImageNet/logs_deterministic/checkpoints/miniImageNet/ResNet10_baseline_256_aug/399.tar
+Test Acc (50 episodes) = 52.35% +- 2.70%
+Test Acc (100 episodes) = 51.95% +- 1.95%
+Test Acc (150 episodes) = 51.76% +- 1.67%
+Test Acc (200 episodes) = 51.02% +- 1.47%
+Test Acc (250 episodes) = 50.88% +- 1.32%
+Test Acc (300 episodes) = 50.82% +- 1.19%
+Test Acc (350 episodes) = 50.75% +- 1.08%
+Test Acc (400 episodes) = 50.67% +- 1.02%
+Test Acc (450 episodes) = 50.85% +- 0.95%
+Test Acc (500 episodes) = 50.81% +- 0.90%
+Test Acc (550 episodes) = 50.96% +- 0.86%
+Test Acc (600 episodes) = 51.12% +- 0.82%
+600 Test Acc = 51.12% +- 0.82%
+5-way 5-shot
+Using Split:  datasets/split_seed_1/EuroSAT_labeled_80.csv
+Loading Model:  /home/muawiz/fewshot_medical_imaging/STARTUP/teacher_miniImageNet/logs_deterministic/checkpoints/miniImageNet/ResNet10_baseline_256_aug/399.tar
+Test Acc (50 episodes) = 77.63% +- 2.10%
+Test Acc (100 episodes) = 77.31% +- 1.42%
+Test Acc (150 episodes) = 76.76% +- 1.16%
+Test Acc (200 episodes) = 76.53% +- 1.05%
+Test Acc (250 episodes) = 76.28% +- 0.94%
+Test Acc (300 episodes) = 76.16% +- 0.91%
+Test Acc (350 episodes) = 76.19% +- 0.86%
+Test Acc (400 episodes) = 76.16% +- 0.79%
+Test Acc (450 episodes) = 76.15% +- 0.76%
+Test Acc (500 episodes) = 76.18% +- 0.72%
+Test Acc (550 episodes) = 76.24% +- 0.70%
+Test Acc (600 episodes) = 76.40% +- 0.67%
+600 Test Acc = 76.40% +- 0.67%
+5-way 20-shot
+Using Split:  datasets/split_seed_1/EuroSAT_labeled_80.csv
+Loading Model:  /home/muawiz/fewshot_medical_imaging/STARTUP/teacher_miniImageNet/logs_deterministic/checkpoints/miniImageNet/ResNet10_baseline_256_aug/399.tar
