@@ -4,7 +4,7 @@
 # finetune.py learns a linear classifier on the features extracted from the support set 
 # compile_result.py computes the averages and the 96 confidence intervals from the results generated from finetune.py
 # and evaluate on the query set
-export CUDA_VISIBLE_DEVICES=6
+export CUDA_VISIBLE_DEVICES=7
 # Evaluate Representations trained on ImageNet
 ##############################################################################################
 
@@ -15,7 +15,7 @@ export CUDA_VISIBLE_DEVICES=6
 ## Before running the commands, please take care of the TODO appropriately"miniImageNet_test"
 for source in "miniImageNet"
 do
-    for target in  "ChestX"
+    for target in  "EuroSAT"  "ChestX" #
     do
         # TODO: Please set the following argument appropriately "ChestX"
         # --save_dir: directory to save the results from evaluation#j  "ChestX" "ISIC"
@@ -24,7 +24,7 @@ do
         #                                evaluating teacher model trained using teacher_miniImageNet/train.py
         # E.g. the following command evaluates the STARTUP representation on 600 tasks
         #      and save the results of the 600 tasks at results/STARTUP_miniImageNet/$source\_$target\_5way.csv
-        python finetune.py \
+        python avg_loss.py \
         --image_size 224 \
         --n_way 5 \
         --n_shot 1 5 20 \
@@ -50,6 +50,7 @@ do
 done
 ##
 
+	#\
 # Before running the commands, please take care of the TODO appropriately
 #for source in "ImageNet"
 #do

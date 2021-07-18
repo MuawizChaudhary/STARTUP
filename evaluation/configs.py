@@ -1,8 +1,9 @@
 
 # TODO: Please set the directory to the target datasets accordingly
-ISIC_path = "/scratch/datasets/CD-FSL/ISIC"
-ChestX_path = "/scratch/datasets/CD-FSL/chestX"
-CropDisease_path = "/scratch/datasets/CD-FSL/CropDiseases"
-EuroSAT_path = "/scratch/datasets/CD-FSL/EuroSAT/2750"
-miniImageNet_path = '/scratch/datasets/CD-FSL/miniImageNet_test'
+#
+ISIC_path = "/home/oyallon/muawiz/FewShotMedical/fewshot_medical_imaging/fewshot_medical_imaging/data/ISIC"
+ChestX_path = "/local/common-data/few_shot_bench_data/ChestXRay"
+CropDisease_path = "/home/muawiz/fewshot_medical_imaging/data/PlantDisease"
+EuroSAT_path = "/local/common-data/few_shot_bench_data/EuroSAT/2750"
+miniImageNet_path = '/local/common-data/few_shot_bench_data/miniImagenet/trainhold/'
 tiered_ImageNet_path = '/scratch/datasets/tiered_imagenet/tiered_imagenet/original_split/test'

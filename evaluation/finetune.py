@@ -4,6 +4,8 @@ import torch.nn as nn
 import torch.optim
 import torch.nn.functional as F
 import os
+from torch.nn.utils.weight_norm import WeightNorm
+
 
 import models
 from datasets import ISIC_few_shot, EuroSAT_few_shot, CropDisease_few_shot, Chest_few_shot, miniImageNet_few_shot, tiered_ImageNet_few_shot
@@ -16,11 +18,36 @@ import copy
 import warnings
 
 
+class distLinear(nn.Module):
+    def __init__(self, indim, outdim):
+        super(distLinear, self).__init__()
+        self.L = nn.Linear( indim, outdim, bias = False)
+        self.class_wise_learnable_norm = True  #See the issue#4&8 in the github 
+        if self.class_wise_learnable_norm:      
+            WeightNorm.apply(self.L, 'weight', dim=0) #split the weight update component to direction and norm      
+
+        if outdim <=200:
+            self.scale_factor = 2; #a fixed scale factor to scale the output of cos value into a reasonably large input for softmax, for to reproduce the result of CUB with ResNet10, use 4. see the issue#31 in the github 
+        else:
+            self.scale_factor = 10; #in omniglot, a larger scale factor is required to handle >1000 output classes.
+
+    def forward(self, x):
+        x_norm = torch.norm(x, p=2, dim =1).unsqueeze(1).expand_as(x)
+        x_normalized = x.div(x_norm+ 0.00001)
+        if not self.class_wise_learnable_norm:
+            L_norm = torch.norm(self.L.weight.data, p=2, dim =1).unsqueeze(1).expand_as(self.L.weight.data)
+            self.L.weight.data = self.L.weight.data.div(L_norm + 0.00001)
+        cos_dist = self.L(x_normalized) #matrix product by forward function, but when using WeightNorm, this also multiply the cosine distance by a class-wise learnable norm, see the issue#4&8 in the github
+        scores = self.scale_factor* (cos_dist) 
+
+        return scores
+
+
+
 class Classifier(nn.Module):
     def __init__(self, dim, n_way):
         super(Classifier, self).__init__()
-        
-        self.fc = nn.Linear(dim, n_way)
+        self.fc = nn.Linear(dim, n_way)#distLinear(dim, n_way) #
 
     def forward(self, x):
         x = self.fc(x)
@@ -32,6 +59,7 @@ def finetune(novel_loader, params, n_shot):
     if params.embedding_load_path_version == 0:
         state = torch.load(params.embedding_load_path)['state']
         state_keys = list(state.keys())
+        #print(state_keys)
         for _, key in enumerate(state_keys):
             if "feature." in key:
                 # an architecture model has attribute 'feature', load architecture feature to backbone by casting name from 'feature.trunk.xx' to 'trunk.xx'
@@ -39,6 +67,7 @@ def finetune(novel_loader, params, n_shot):
                 state[newkey] = state.pop(key)
             else:
                 state.pop(key)
+            
         sd = state
     elif params.embedding_load_path_version == 1:
         sd = torch.load(params.embedding_load_path)
@@ -71,6 +100,9 @@ def finetune(novel_loader, params, n_shot):
     elif params.model == 'resnet18':
         pretrained_model_template = models.resnet18(remove_last_relu=False, 
                                         input_high_res=True)
+        feature_dim = 512
+    elif params.model == 'vgg11':
+        pretrained_model_template = models.vgg11_bn()
         feature_dim = 512
     else:
         raise ValueError("Invalid model!")
@@ -172,7 +204,7 @@ def finetune(novel_loader, params, n_shot):
         # print (correct_this/ count_this *100)
         acc_all.append((correct_this/ count_this *100))
 
-        if (i+1) % 100 == 0:
+        if (i+1) % 50 == 0:
             acc_all_np = np.asarray(acc_all)
             acc_mean = np.mean(acc_all_np)
             acc_std = np.std(acc_all_np)
