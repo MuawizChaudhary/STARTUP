@@ -1,0 +1,112 @@
+EuroSAT
+5-way 1-shot
+Using Split:  datasets/split_seed_1/EuroSAT_labeled_80.csv
+Loading Model:  /home/muawiz/fewshot_medical_imaging/STARTUP/teacher_miniImageNet/logs_deterministic/checkpoints/miniImageNet/dgl_baseline_128_aug/399.tar
+Test Acc (50 episodes) = 34.51% +- 2.74%
+Test Acc (100 episodes) = 33.72% +- 2.17%
+Test Acc (150 episodes) = 33.17% +- 1.84%
+Test Acc (200 episodes) = 33.57% +- 1.55%
+Test Acc (250 episodes) = 33.75% +- 1.37%
+Test Acc (300 episodes) = 34.08% +- 1.24%
+Test Acc (350 episodes) = 34.14% +- 1.14%
+Test Acc (400 episodes) = 34.03% +- 1.05%
+Test Acc (450 episodes) = 33.89% +- 0.97%
+Test Acc (500 episodes) = 34.05% +- 0.93%
+Test Acc (550 episodes) = 34.14% +- 0.88%
+Test Acc (600 episodes) = 33.87% +- 0.84%
+600 Test Acc = 33.87% +- 0.84%
+5-way 5-shot
+Using Split:  datasets/split_seed_1/EuroSAT_labeled_80.csv
+Loading Model:  /home/muawiz/fewshot_medical_imaging/STARTUP/teacher_miniImageNet/logs_deterministic/checkpoints/miniImageNet/dgl_baseline_128_aug/399.tar
+Test Acc (50 episodes) = 35.68% +- 4.19%
+Test Acc (100 episodes) = 34.96% +- 2.89%
+Test Acc (150 episodes) = 34.60% +- 2.27%
+Test Acc (200 episodes) = 34.65% +- 1.96%
+Test Acc (250 episodes) = 34.44% +- 1.75%
+Test Acc (300 episodes) = 34.39% +- 1.59%
+Test Acc (350 episodes) = 34.38% +- 1.49%
+Test Acc (400 episodes) = 34.12% +- 1.39%
+Test Acc (450 episodes) = 33.86% +- 1.30%
+Test Acc (500 episodes) = 33.69% +- 1.22%
+Test Acc (550 episodes) = 33.76% +- 1.17%
+Test Acc (600 episodes) = 33.74% +- 1.11%
+600 Test Acc = 33.74% +- 1.11%
+5-way 20-shot
+Using Split:  datasets/split_seed_1/EuroSAT_labeled_80.csv
+Loading Model:  /home/muawiz/fewshot_medical_imaging/STARTUP/teacher_miniImageNet/logs_deterministic/checkpoints/miniImageNet/dgl_baseline_128_aug/399.tar
+Test Acc (50 episodes) = 29.33% +- 3.73%
+Test Acc (100 episodes) = 30.85% +- 2.81%
+Test Acc (150 episodes) = 30.85% +- 2.28%
+Test Acc (200 episodes) = 31.27% +- 2.00%
+Test Acc (250 episodes) = 30.86% +- 1.76%
+Test Acc (300 episodes) = 30.30% +- 1.59%
+Test Acc (350 episodes) = 30.16% +- 1.49%
+Test Acc (400 episodes) = 29.98% +- 1.37%
+Test Acc (450 episodes) = 29.80% +- 1.27%
+Test Acc (500 episodes) = 29.48% +- 1.20%
+Test Acc (550 episodes) = 29.39% +- 1.14%
+Test Acc (600 episodes) = 29.56% +- 1.10%
+600 Test Acc = 29.56% +- 1.10%
+5-way 50-shot
+Using Split:  datasets/split_seed_1/EuroSAT_labeled_80.csv
+Loading Model:  /home/muawiz/fewshot_medical_imaging/STARTUP/teacher_miniImageNet/logs_deterministic/checkpoints/miniImageNet/dgl_baseline_128_aug/399.tar
+         Mean      95CI
+1   33.873333  0.841274
+5   33.744444  1.107697
+20  29.564444  1.104089
+ChestX
+5-way 1-shot
+Using Split:  datasets/split_seed_1/ChestX_labeled_80.csv
+Loading Model:  /home/muawiz/fewshot_medical_imaging/STARTUP/teacher_miniImageNet/logs_deterministic/checkpoints/miniImageNet/dgl_baseline_128_aug/399.tar
+Test Acc (50 episodes) = 21.41% +- 1.40%
+Test Acc (100 episodes) = 20.96% +- 0.88%
+Test Acc (150 episodes) = 21.07% +- 0.66%
+Test Acc (200 episodes) = 20.95% +- 0.56%
+Test Acc (250 episodes) = 20.91% +- 0.49%
+Test Acc (300 episodes) = 20.85% +- 0.44%
+Test Acc (350 episodes) = 20.96% +- 0.41%
+Test Acc (400 episodes) = 20.83% +- 0.39%
+Test Acc (450 episodes) = 20.80% +- 0.37%
+Test Acc (500 episodes) = 20.70% +- 0.35%
+Test Acc (550 episodes) = 20.72% +- 0.33%
+Test Acc (600 episodes) = 20.75% +- 0.32%
+600 Test Acc = 20.75% +- 0.32%
+5-way 5-shot
+Using Split:  datasets/split_seed_1/ChestX_labeled_80.csv
+Loading Model:  /home/muawiz/fewshot_medical_imaging/STARTUP/teacher_miniImageNet/logs_deterministic/checkpoints/miniImageNet/dgl_baseline_128_aug/399.tar
+Test Acc (50 episodes) = 20.59% +- 1.24%
+Test Acc (100 episodes) = 21.21% +- 0.90%
+Test Acc (150 episodes) = 21.33% +- 0.77%
+Test Acc (200 episodes) = 21.27% +- 0.62%
+Test Acc (250 episodes) = 21.38% +- 0.54%
+Test Acc (300 episodes) = 21.54% +- 0.50%
+Test Acc (350 episodes) = 21.42% +- 0.45%
+Test Acc (400 episodes) = 21.48% +- 0.43%
+Test Acc (450 episodes) = 21.58% +- 0.41%
+Test Acc (500 episodes) = 21.50% +- 0.39%
+Test Acc (550 episodes) = 21.36% +- 0.36%
+Test Acc (600 episodes) = 21.40% +- 0.35%
+600 Test Acc = 21.40% +- 0.35%
+5-way 20-shot
+Using Split:  datasets/split_seed_1/ChestX_labeled_80.csv
+Loading Model:  /home/muawiz/fewshot_medical_imaging/STARTUP/teacher_miniImageNet/logs_deterministic/checkpoints/miniImageNet/dgl_baseline_128_aug/399.tar
+Test Acc (50 episodes) = 22.11% +- 1.18%
+Test Acc (100 episodes) = 22.56% +- 0.91%
+Test Acc (150 episodes) = 22.28% +- 0.72%
+Test Acc (200 episodes) = 22.29% +- 0.62%
+Test Acc (250 episodes) = 22.28% +- 0.56%
+Test Acc (300 episodes) = 22.31% +- 0.50%
+Test Acc (350 episodes) = 22.27% +- 0.47%
+Test Acc (400 episodes) = 22.24% +- 0.44%
+Test Acc (450 episodes) = 22.17% +- 0.41%
+Test Acc (500 episodes) = 22.12% +- 0.38%
+Test Acc (550 episodes) = 22.21% +- 0.37%
+Test Acc (600 episodes) = 22.15% +- 0.35%
+600 Test Acc = 22.15% +- 0.35%
+5-way 50-shot
+Using Split:  datasets/split_seed_1/ChestX_labeled_80.csv
+Loading Model:  /home/muawiz/fewshot_medical_imaging/STARTUP/teacher_miniImageNet/logs_deterministic/checkpoints/miniImageNet/dgl_baseline_128_aug/399.tar
+         Mean      95CI
+1   20.746667  0.318186
+5   21.400000  0.350488
+20  22.146667  0.353840

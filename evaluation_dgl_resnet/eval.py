@@ -156,19 +156,22 @@ def finetune(novel_loader, params, n_shot):
         x_b_i = x_var[:, n_support:,: ,: ,:].contiguous().view(n_way*n_query, *x.size()[2:]).cuda() 
         x_a_i = x_var[:, :n_support,: ,: ,:].contiguous().view(n_way*n_support, *x.size()[2:]).cuda() # (25, 3, 224, 224)
         
-        # start the for n
-        if params.freeze_backbone:
-            pretrained_model.eval()
-            with torch.no_grad():
-                _, _, f_a_i = pretrained_model(x_a_i, n, True)
-        else:
-            pretrained_model.train()
-
+        
         for n in range(0, N):
             if n < (N-1):
                 classifier = copy.deepcopy(pretrained_model_template.auxillary_nets[n])
             else:
                 classifier = Classifier(feature_dim, params.n_way)
+
+# start the for n
+            if params.freeze_backbone:
+                pretrained_model.eval()
+                if n < (N-1):
+                    with torch.no_grad():
+                        _, _, x_a_i = pretrained_model(x_a_i, n, False)
+            else:
+                pretrained_model.train()
+
             # TODO GO ALL THE WAY TO len(main_cnn.block) - 2
             #
             classifier.cuda()
@@ -202,7 +205,13 @@ def finetune(novel_loader, params, n_shot):
                     y_batch = y_a_i[selected_id]
 
                     if params.freeze_backbone:
-                        output = f_a_i[selected_id]
+                        if n != N-1:
+                            output=x_a_i[selected_id]
+
+                            output = classifier(output)[0]
+                        else:
+                            output = x_a_i[selected_id]
+                            output = classifier(output)
                     else:
                         if n != N-1:
                             z_batch = x_a_i[selected_id]
@@ -226,8 +235,9 @@ def finetune(novel_loader, params, n_shot):
 
             with torch.no_grad():
                 if n != N-1:
+                    if not params.freeze_backbone:
+                        _,_,x_a_i = pretrained_model(x_a_i,n, False)
                     _,_,x_b_i = pretrained_model(x_b_i, n, False)
-                    _,_,x_a_i = pretrained_model(x_a_i,n, False)
                     scores = classifier(x_b_i)[0]
                 else:
                     scores = classifier(x_b_i)

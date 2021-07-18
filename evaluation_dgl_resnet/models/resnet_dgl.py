@@ -348,7 +348,7 @@ def ResNet10_dgl():
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=64, split_points=3, **kwargs):
+    def __init__(self, block, layers, num_classes=64, split_points=0, **kwargs):
         super(ResNet, self).__init__()
         self.inplanes = 64
         self.avg_size = int(56 / 2)
@@ -411,6 +411,7 @@ class ResNet(nn.Module):
             for i in range(len(base_blocks)):
                 blocks.append(base_blocks[i])
                 in_size, planes = self.auxillary_size_tracker[i] 
+                print(in_size,planes)
                 self.auxillary_nets.append(
                     auxillary_conv_classifier(in_size=in_size,
                                           input_features=planes,

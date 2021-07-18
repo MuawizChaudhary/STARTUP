@@ -4,50 +4,7 @@
 # finetune.py learns a linear classifier on the features extracted from the support set 
 # compile_result.py computes the averages and the 96 confidence intervals from the results generated from finetune.py
 # and evaluate on the query set
-export CUDA_VISIBLE_DEVICES=1
-
-##############################################################################################
-# Evaluate Representations trained on ImageNet
-##############################################################################################
-
-# Before running the commands, please take care of the TODO appropriately
-#for source in "ImageNet"
-#do
-#    for target in "EuroSAT" "ChestX"
-#    do
-#        # TODO: Please set the following argument appropriately 
-#        # --save_dir: directory to save the results from evaluation
-#        # --embedding_load_path: representation to be evaluated 
-#        # E.g. the following command evaluates the STARTUP representation on 600 tasks
-#        #      and save the results of the 600 tasks at results/STARTUP_ImageNet/$source\_$target\_5way.csv
-#        python finetune.py \
-#        --image_size 224 \
-#        --n_way 5 \
-#        --n_shot 1 5 20 50 \
-#        --n_episode  600\
-#        --n_query 15 \
-#        --seed 1 \
-#        --source_dataset $source \
-#        --target_dataset $target \
-#        --subset_split datasets/split_seed_1/$target\_labeled_80.csv \
-#        --model resnet18 \
-#        --save_dir results/STARTUP_ImageNet \
-#        --embedding_load_path ../teacher_ImageNet/resnet18/checkpoint.pkl\
-#        --embedding_load_path_version 1 
-#
-#        # TODO: Please set --result_file appropriately. The prefix of the argument should be the same as 
-#        # the --save_dir from the previous command
-#        # E.g. the following command computes the mean and 95 CI from results/STARTUP_ImageNet/$source\_$target\_5way.csv
-#        #       and saves them to results/STARTUP_ImageNet/$source\_$target\_5way_compiled.csv
-#        python compile_result.py --result_file results/STARTUP_ImageNet/$source\_$target\_5way.csv
-#    done
-#done
-#
-##############################################################################################
-# Evaluate Representations trained on miniImageNet
-##############################################################################################
-
-## Before running the commands, please take care of the TODO appropriately"miniImageNet_test"
+export CUDA_VISIBLE_DEVICES=7
 for source in "miniImageNet"
 do
     for target in  "EuroSAT" 
@@ -71,7 +28,7 @@ do
         --target_dataset $target \
         --subset_split datasets/split_seed_1/$target\_labeled_80.csv \
         --model resnet10_dgl \
-        --embedding_load_path   /local/oyallon/muawiz/models_split_2_mlp_1_bn/checkpoints/miniImageNet/ResNet10_dgl_baseline_256_aug/399.tar\
+        --embedding_load_path   /local/oyallon/muawiz/models_mlp_1_bn/checkpoints/miniImageNet/ResNet10_dgl_baseline_256_aug/399.tar\
         --embedding_load_path_version 0
         #../student_STARTUP/miniImageNet_source_rerun/$target\_unlabeled_20/checkpoint_best.pkl \
         # TODO: Please set --result_file appropriately. The prefix of the argument should be the same as $target

@@ -23,12 +23,13 @@ do
         --n_episode 100 \
         --n_query 15 \
         --seed 1 \
+	--freeze_backbone \
         --save_dir results/STARTUP_miniImageNet \
         --source_dataset $source \
         --target_dataset $target \
         --subset_split datasets/split_seed_1/$target\_labeled_80.csv \
         --model resnet10_dgl \
-        --embedding_load_path   /local/oyallon/muawiz/models_split_3_mlp_1_bn/checkpoints/miniImageNet/ResNet10_dgl_baseline_256_aug/399.tar\
+        --embedding_load_path   /local/oyallon/muawiz/models_mlp_1_bn/checkpoints/miniImageNet/ResNet10_dgl_baseline_256_aug/399.tar\
         --embedding_load_path_version 0
     done
 done

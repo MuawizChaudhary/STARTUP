@@ -12,8 +12,12 @@ import torch
 def main(args):
     if args.model == 'resnet18':
         backbone = models.resnet18(remove_last_relu=False, input_high_res=True).cuda()
+    if args.model == 'vgg11':
+        backbone = models.vgg11(pretrained=True).cuda()
     else:
         raise ValueError("Invalid backbone!")
+
+    print(backbone)
     
     pretrained_model = getattr(
         torchvision.models, args.model)(pretrained=True).cuda()
