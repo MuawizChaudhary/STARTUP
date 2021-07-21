@@ -158,11 +158,11 @@ class distLinear(nn.Module):
 class Classifier(nn.Module):
     def __init__(self, dim, n_way, lam_size):
         super(Classifier, self).__init__()
-        self.fc = nn.Linear(dim, n_way)#distLinear(dim, n_way) #
-        self.lam = nn.Parameter(torch.zeros(1, lam_size), requires_grad=True)
+        self.fc = distLinear(dim, n_way) # nn.Linear(dim, n_way)#
+        self.lam = nn.Parameter(torch.zeros(1, 1), requires_grad=True)
 
     def forward(self, x, total):
-        #total.append(F.normalize(x, p=2, dim=1)*F.sigmoid(self.lam))
+        #total.append(F.normalize(x, p=2, dim=1)*self.lam)
         total.append(x*F.sigmoid(self.lam))
         #total = torch.cat(total, dim=1)
         #total.append(F.normalize(x, p=2, dim=1)) 
@@ -178,9 +178,10 @@ class aux_class(nn.Module):
         self.main = nn.Sequential(
                                     nn.AdaptiveAvgPool2d(2),
                                     nn.Flatten())
-        self.lam = nn.Parameter(torch.zeros(1, dim), requires_grad=True)
+        self.lam = nn.Parameter(torch.zeros(1, 1), requires_grad=True)
      
     def forward(self, x):
+        #x = F.normalize(self.main(x), p=2, dim=1) * self.lam
         #x = F.normalize(self.main(x), p=2, dim=1) * F.sigmoid(self.lam)
         x = self.main(x) * F.sigmoid(self.lam)
         #x=F.normalize(self.main(x), p=2, dim=1)
