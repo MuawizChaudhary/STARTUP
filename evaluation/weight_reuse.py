@@ -133,7 +133,7 @@ class distLinear(nn.Module):
     def __init__(self, indim, outdim):
         super(distLinear, self).__init__()
         self.L = nn.Linear( indim, outdim, bias = False)
-        self.class_wise_learnable_norm = False  #See the issue#4&8 in the github 
+        self.class_wise_learnable_norm = True  #See the issue#4&8 in the github 
         if self.class_wise_learnable_norm:      
             WeightNorm.apply(self.L, 'weight', dim=0) #split the weight update component to direction and norm      
 
@@ -156,15 +156,17 @@ class distLinear(nn.Module):
 class Classifier(nn.Module):
     def __init__(self, dim, n_way, lam_size):
         super(Classifier, self).__init__()
-        self.fc = distLinear(dim, n_way) # nn.Linear(dim, n_way)#
+        self.fc =  distLinear(dim, n_way)# nn.Linear(dim, n_way)# 
         self.lam = nn.Parameter(torch.zeros(1, 1), requires_grad=True)
 
     def forward(self, x, total):
-        total.append(F.normalize(x, p=2, dim=1)*F.sigmoid(self.lam))
+        total.append(F.normalize(x, p=2, dim=1))#*F.sigmoid(self.lam))
         #total.append(x*F.sigmoid(self.lam))
         #total = torch.cat(total, dim=1)
         #total.append(F.normalize(x, p=2, dim=1)) 
         total = torch.cat(total, dim=1)
+        if self.training:
+            self.fc.L.weight = total
         x = self.fc(total)
         return x
 
@@ -180,7 +182,7 @@ class aux_class(nn.Module):
      
     def forward(self, x):
         #x = F.normalize(self.main(x), p=2, dim=1) * self.lam
-        x = F.normalize(self.main(x), p=2, dim=1) * F.sigmoid(self.lam)
+        x = F.normalize(self.main(x), p=2, dim=1) #* F.sigmoid(self.lam)
         #x = self.main(x) * F.sigmoid(self.lam)
         #x=F.normalize(self.main(x), p=2, dim=1)
         return x
@@ -317,70 +319,64 @@ def finetune(novel_loader, params, n_shot):
 
         ###############################################################################################
         total_epoch = 100
-        
-
-
-        for epoch in range(total_epoch):
-            rand_id = np.random.permutation(support_size)
-
-            for j in range(0, support_size, batch_size):
-                n=-1
-                total = []
-                for m in pretrained_model.trunk:
-                    if params.freeze_backbone:
-                        m.eval()
-                        with torch.no_grad():
-                            if n == -1:
-                                m_a_i = m(x_a_i)
-                                n=0
-                            else:
-                                m_a_i = m(m_a_i)
+        n=-1
+        total = []
+        for m in pretrained_model.trunk:
+            if params.freeze_backbone:
+                m.eval()
+                with torch.no_grad():
+                    if n == -1:
+                        m_a_i = m(x_a_i)
+                        n=0
                     else:
-                        m.train()
-        
-                    #classifier_opt[n].zero_grad()
-                    if not params.freeze_backbone:
-                        delta_opt.zero_grad()
-                        
+                        m_a_i = m(m_a_i)
+            else:
+                m.train()
+                                                                                                
+            #classifier_opt[n].zero_grad()
+            if not params.freeze_backbone:
+                delta_opt.zero_grad()
+                
+                                                                                                
+            #####################################
+                                                                                                
+            y_batch = y_a_i
+                                                                                                
+            if params.freeze_backbone:
+                output = m_a_i
+            else:
+                z_batch = x_a_i
+                output = m(z_batch)
+                                                                                                
+            if m.__class__.__name__ == "SimpleBlock" or m.__class__.__name__ == "MaxPool2d":
+                classifiers[n].train()
+                output = classifiers[n](output)
+                total.append(output)
+                #total.append(output)
+                                                                                                
+                #####################################
+                #loss.backward()
+                                                                                                
+                #classifier_opt[n].step()
+                #if not params.freeze_backbone:
+                #    delta_opt.step()
+                n+=1
+                                                                                                
+            if m.__class__.__name__=="Flatten":
+                #total.append(F.normalize(output, p=2, dim=1))
+                classifier.train()
+                total = classifier(output, total)
+                                                                                                
+                #loss = loss_fn[0](total, y_batch)
+                #loss.backward()
+                                                                                                
+                #classifier_opt.step()
+                #classifier_opt2.step()
+                #                                                                                
+                #classifier_opt.zero_grad()
+                #classifier_opt2.zero_grad()
 
-                    #####################################
-                    selected_id = torch.from_numpy( rand_id[j: min(j+batch_size, support_size)]).cuda()
-               
-                    y_batch = y_a_i[selected_id]
 
-                    if params.freeze_backbone:
-                        output = m_a_i[selected_id]
-                    else:
-                        z_batch = x_a_i[selected_id]
-                        output = m(z_batch)
-
-                    if m.__class__.__name__ == "SimpleBlock" or m.__class__.__name__ == "MaxPool2d":
-                        classifiers[n].train()
-                        output = classifiers[n](output)
-                        total.append(output)
-                        #total.append(output)
-
-                        #####################################
-                        #loss.backward()
-
-                        #classifier_opt[n].step()
-                        if not params.freeze_backbone:
-                            delta_opt.step()
-                        n+=1
-
-                    if m.__class__.__name__=="Flatten":
-                        #total.append(F.normalize(output, p=2, dim=1))
-                        classifier.train()
-                        total = classifier(output, total)
-
-                        loss = loss_fn[0](total, y_batch)
-                        loss.backward()
-
-                        classifier_opt.step()
-                        classifier_opt2.step()
-
-                        classifier_opt.zero_grad()
-                        classifier_opt2.zero_grad()
 
         pretrained_model.eval()
 
