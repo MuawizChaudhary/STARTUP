@@ -133,7 +133,7 @@ class distLinear(nn.Module):
     def __init__(self, indim, outdim):
         super(distLinear, self).__init__()
         self.L = nn.Linear( indim, outdim, bias = False)
-        self.class_wise_learnable_norm = False  #See the issue#4&8 in the github 
+        self.class_wise_learnable_norm = True  #See the issue#4&8 in the github 
         if self.class_wise_learnable_norm:      
             WeightNorm.apply(self.L, 'weight', dim=0) #split the weight update component to direction and norm      
 
@@ -174,8 +174,8 @@ class aux_class(nn.Module):
     def __init__(self, dim):
         super(aux_class, self).__init__()
         self.main = nn.Sequential(
-                                    nn.AdaptiveAvgPool2d(2),
-                                    nn.Flatten())
+                                    nn.AdaptiveAvgPool2d(2)
+                                    )#nn.Flatten())
         self.lam = nn.Parameter(torch.zeros(1, 1), requires_grad=True)
      
     def forward(self, x):
@@ -358,6 +358,7 @@ def finetune(novel_loader, params, n_shot):
                         classifiers[n].train()
                         output = classifiers[n](output)
                         total.append(output)
+                        print(output.shape)
                         #total.append(output)
 
                         #####################################

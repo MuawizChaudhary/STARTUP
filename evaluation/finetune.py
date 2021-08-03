@@ -27,7 +27,7 @@ class distLinear(nn.Module):
             WeightNorm.apply(self.L, 'weight', dim=0) #split the weight update component to direction and norm      
 
         if outdim <=200:
-            self.scale_factor = 2; #a fixed scale factor to scale the output of cos value into a reasonably large input for softmax, for to reproduce the result of CUB with ResNet10, use 4. see the issue#31 in the github 
+            self.scale_factor = 10; #a fixed scale factor to scale the output of cos value into a reasonably large input for softmax, for to reproduce the result of CUB with ResNet10, use 4. see the issue#31 in the github 
         else:
             self.scale_factor = 10; #in omniglot, a larger scale factor is required to handle >1000 output classes.
 
@@ -47,7 +47,7 @@ class distLinear(nn.Module):
 class Classifier(nn.Module):
     def __init__(self, dim, n_way):
         super(Classifier, self).__init__()
-        self.fc = nn.Linear(dim, n_way)#distLinear(dim, n_way) #
+        self.fc = distLinear(dim, n_way) #nn.Linear(dim, n_way) #
 
     def forward(self, x):
         x = self.fc(x)

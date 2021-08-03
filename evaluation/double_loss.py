@@ -3,10 +3,8 @@ import torch
 import torch.nn as nn
 import torch.optim
 import torch.nn.functional as F
-from torch import linalg as LA
 import os
 from torch.nn.utils.weight_norm import WeightNorm
-import itertools
 
 
 import math
@@ -19,6 +17,7 @@ import argparse
 import random
 import copy
 import warnings
+import itertools
 class auxillary_conv_classifier(nn.Module):
     def __init__(self, input_features=256, in_size=32, cnn=False,
                  num_classes=10, n_mlp=0, n_conv=0, loss_sup="pred", 
@@ -129,6 +128,8 @@ class auxillary_conv_classifier(nn.Module):
         out = self.classifier(out)
         return out
 
+
+
 class distLinear(nn.Module):
     def __init__(self, indim, outdim):
         super(distLinear, self).__init__()
@@ -138,7 +139,7 @@ class distLinear(nn.Module):
             WeightNorm.apply(self.L, 'weight', dim=0) #split the weight update component to direction and norm      
 
         if outdim <=200:
-            self.scale_factor = 10; #a fixed scale factor to scale the output of cos value into a reasonably large input for softmax, for to reproduce the result of CUB with ResNet10, use 4. see the issue#31 in the github 
+            self.scale_factor = 2; #a fixed scale factor to scale the output of cos value into a reasonably large input for softmax, for to reproduce the result of CUB with ResNet10, use 4. see the issue#31 in the github 
         else:
             self.scale_factor = 10; #in omniglot, a larger scale factor is required to handle >1000 output classes.
 
@@ -153,39 +154,42 @@ class distLinear(nn.Module):
 
         return scores
 
+
+
 class Classifier(nn.Module):
-    def __init__(self, dim, n_way, lam_size):
+    def __init__(self, dim, n_way):
         super(Classifier, self).__init__()
-        self.fc =  distLinear(dim, n_way)# nn.Linear(dim, n_way)# 
-        self.lam = nn.Parameter(torch.zeros(1, 1), requires_grad=True)
-
-    def forward(self, x, total):
-        total.append(F.normalize(x, p=2, dim=1))#*F.sigmoid(self.lam))
-        #total.append(x*F.sigmoid(self.lam))
-        #total = torch.cat(total, dim=1)
-        #total.append(F.normalize(x, p=2, dim=1)) 
-        total = torch.cat(total, dim=1)
-        if self.training:
-            self.fc.L.weight = total
-        x = self.fc(total)
-        return x
-
-
-
-class aux_class(nn.Module):
-    def __init__(self, dim):
-        super(aux_class, self).__init__()
-        self.main = nn.Sequential(
-                                    nn.AdaptiveAvgPool2d(2),
-                                    nn.Flatten())
-        self.lam = nn.Parameter(torch.zeros(1, 1), requires_grad=True)
-     
+        self.fc1 = nn.Linear(dim//2, n_way)
+        self.fc2 = nn.Linear(dim//2, n_way)
+        
     def forward(self, x):
-        #x = F.normalize(self.main(x), p=2, dim=1) * self.lam
-        x = F.normalize(self.main(x), p=2, dim=1) #* F.sigmoid(self.lam)
-        #x = self.main(x) * F.sigmoid(self.lam)
-        #x=F.normalize(self.main(x), p=2, dim=1)
+        x1 = self.fc1(x[:,:x.shape[1]//2].view(x.size(0), -1))
+        x2 = self.fc2(x[:,x.shape[1]//2:].view(x.size(0), -1))
+
+        return (x1, x2)
+
+class ClassifierFinal(nn.Module):
+    def __init__(self, dim, n_way):
+        super(ClassifierFinal, self).__init__()
+        self.fc = nn.Linear(dim, n_way)#distLinear(dim, n_way) #
+
+    def forward(self, x):
+        x = self.fc(x)
         return x
+
+
+
+
+class DoubleLoss(nn.Module):
+    def __init__(self):
+        super(DoubleLoss, self).__init__()
+        self.loss1 = nn.CrossEntropyLoss()
+        self.loss2 = nn.CrossEntropyLoss()
+        
+    def forward(self, x, correct):
+        loss1 = self.loss1(x[0], correct)
+        loss2 = self.loss2(x[1], correct)
+        return loss1 + loss2
 
 
 def finetune(novel_loader, params, n_shot): 
@@ -256,23 +260,18 @@ def finetune(novel_loader, params, n_shot):
 
         pretrained_model = copy.deepcopy(pretrained_model_template)
 
-        classifier = Classifier(4608, params.n_way, 128*4)
-        classifier.cuda()
+        classifier = Classifier(feature_dim, params.n_way)
 
         pretrained_model.cuda()
 
         classifiers=[]
-        in_plane = [[56, 64],[56, 64],[28, 128],[14, 256],[7, 512], [0, 128]]
+        in_plane = [[56, 64],[56, 64],[28, 128],[14, 256],[7, 512]]
         
         for n in range(0,N):
-            l = aux_class(in_plane[n][1]*4)
-
-            classifiers.append(l)
-            #l.lam = torch.rand()
-            #classifiers.append( nn.Sequential(
-            #                        nn.AdaptiveAvgPool2d(2),
-            #                        nn.Flatten())
-            #                    )
+            if n == 5:
+                classifiers.append(ClassifierFinal(feature_dim, params.n_way))
+            else:
+                classifiers.append(Classifier(in_plane[n][1]*in_plane[n][0]*in_plane[n][0], params.n_way))
                     #auxillary_conv_classifier(in_size=in_plane[n][0],
                     #                      input_features=in_plane[n][1],
                     #                      n_mlp=0,
@@ -297,135 +296,95 @@ def finetune(novel_loader, params, n_shot):
         x_b_i = x_var[:, n_support:,: ,: ,:].contiguous().view(n_way*n_query, *x.size()[2:]).cuda() 
         x_a_i = x_var[:, :n_support,: ,: ,:].contiguous().view(n_way*n_support, *x.size()[2:]).cuda() # (25, 3, 224, 224)
 
-        loss_fn = [nn.CrossEntropyLoss().cuda() for n in range(0,N)]
-        
-        to_train = list(classifier.parameters())
-        to_train_1 = []
-        for n in range(0,N):
-            to_train_1.extend(list(classifiers[n].parameters()))
+        loss_fn = [DoubleLoss().cuda() for n in range(0,N)]
+        loss_fn[-1] = nn.CrossEntropyLoss().cuda()
+        classifier_opt = [torch.optim.SGD(classifiers[n].parameters(), lr=0.01, momentum=0.9, dampening=0.9, weight_decay=0.001) for n in range(0,N)]
+        n=0
+        for m in pretrained_model.trunk:
+            if params.freeze_backbone:
+                m.eval()
+                with torch.no_grad():
+                    x_a_i = m(x_a_i)
+            else:
+                m.train()
 
-        classifier_opt = torch.optim.SGD(to_train, lr=0.01, momentum=0.9, dampening=0.9, weight_decay=0.001) # experiment with this
-
-        classifier_opt2 = torch.optim.Adadelta(to_train_1, lr=(3e+3/n_way))#SGD(to_train_1, lr=0.01, momentum=0.9, dampening=0.9, weight_decay=0.001) # experiment with this
-        # double check parameters are there.
-        # diff optimizers for lambdas and linear layers
-        # take adadelta settings and set that the default
-        #classifier_opt = [torch.optim.SGD(classifiers[n].parameters(), lr=0.01, momentum=0.9, dampening=0.9, weight_decay=0.001) for n in range(0,N)]
-                 ###############################################################################################
-        
-
-        if not params.freeze_backbone:
-            delta_opt = torch.optim.SGD(filter(lambda p: p.requires_grad, pretrained_model.parameters()), lr=0.01)
-
-        ###############################################################################################
-        total_epoch = 100
-        
-
-
-        for epoch in range(total_epoch):
-            n=-1
-            total = []
-            for m in pretrained_model.trunk:
-                if params.freeze_backbone:
-                    m.eval()
-                    with torch.no_grad():
-                        if n == -1:
-                            m_a_i = m(x_a_i)
-                            n=0
-                        else:
-                            m_a_i = m(m_a_i)
-                else:
-                    m.train()
-        
-                #classifier_opt[n].zero_grad()
-                if not params.freeze_backbone:
-                    delta_opt.zero_grad()
-                    
-
-                #####################################
+             ###############################################################################################
             
-                y_batch = y_a_i
 
-                if params.freeze_backbone:
-                    output = m_a_i
-                else:
-                    z_batch = x_a_i
-                    output = m(z_batch)
+            if not params.freeze_backbone:
+                delta_opt = torch.optim.SGD(filter(lambda p: p.requires_grad, pretrained_model.parameters()), lr=0.01)
 
-                if m.__class__.__name__ == "SimpleBlock" or m.__class__.__name__ == "MaxPool2d":
-                    classifiers[n].train()
-                    output = classifiers[n](output)
-                    total.append(output)
-                    #total.append(output)
+            ###############################################################################################
+            total_epoch = 100
+            
+
+
+            for epoch in range(total_epoch):
+                rand_id = np.random.permutation(support_size)
+
+                for j in range(0, support_size, batch_size):
+                    classifier_opt[n].zero_grad()
+                    if not params.freeze_backbone:
+                        delta_opt.zero_grad()
+                        
 
                     #####################################
-                    #loss.backward()
+                    selected_id = torch.from_numpy( rand_id[j: min(j+batch_size, support_size)]).cuda()
+                   
+                    y_batch = y_a_i[selected_id]
 
-                    #classifier_opt[n].step()
-                    n+=1
+                    if params.freeze_backbone:
+                        output = x_a_i[selected_id]
+                    else:
+                        z_batch = x_a_i[selected_id]
+                        output = m(z_batch)
 
-                if m.__class__.__name__=="Flatten":
-                    #total.append(F.normalize(output, p=2, dim=1))
-                    classifier.train()
-                    total = classifier(output, total)
+                    if m.__class__.__name__ == "SimpleBlock" or m.__class__.__name__ == "MaxPool2d" or m.__class__.__name__=="Flatten":
+                        classifiers[n].train()
+                        output = classifiers[n](output)
+                        loss = loss_fn[n](output, y_batch)
 
-                    loss = loss_fn[0](total, y_batch)
-                    loss.backward()
+                        #####################################
+                        loss.backward()
 
-                    classifier_opt.step()
-                    #classifier_opt2.step()
+                        classifier_opt[n].step()
+                        if not params.freeze_backbone:
+                            delta_opt.step()
 
-                    classifier_opt.zero_grad()
-                    #classifier_opt2.zero_grad()
+            pretrained_model.eval()
 
-        pretrained_model.eval()
-
-        with torch.no_grad():
-            n=0
-            total =[]
-            for m in pretrained_model.trunk:
-
+            with torch.no_grad():
                 x_b_i = m(x_b_i)
-                if m.__class__.__name__ == "SimpleBlock" or m.__class__.__name__ == "MaxPool2d":
+                if not params.freeze_backbone:
+                    x_a_i = m(x_a_i)
+                if( m.__class__.__name__ == "SimpleBlock" or m.__class__.__name__ == "MaxPool2d" or m.__class__.__name__=="Flatten"):
+                    if n!= 5:
+                        n+=1
+                    else:
                         classifiers[n].eval()
-                        output = classifiers[n](x_b_i)
-                        total.append(output)
+                        scores = classifiers[n](x_b_i)
+       
+                        y_query = np.repeat(range( n_way ), n_query )
+                        topk_scores, topk_labels = scores.data.topk(1, 1, True, True)
+                        topk_ind = topk_labels.cpu().numpy()
+                        
+                        top1_correct = np.sum(topk_ind[:,0] == y_query)
+                        correct_this, count_this = float(top1_correct), len(y_query)
+                        # print (correct_this/ count_this *100)
+                        acc_all[n].append((correct_this/ count_this *100))
+
+                        if (i+1) % 50 == 0:
+                            acc_all_np = np.asarray(acc_all[n])
+                            acc_mean = np.mean(acc_all_np)
+                            acc_std = np.std(acc_all_np)
+                            print('Test Acc (%d episodes) = %4.2f%% +- %4.2f%%' %
+                                (len(acc_all[n]),  acc_mean, 1.96 * acc_std/np.sqrt(len(acc_all[n]))))
 
                         n+=1
-
-
-
-
-                if m.__class__.__name__=="Flatten":
-                    n=0
-                    classifier.eval()
-                    scores = classifier(x_b_i, total)
-
-
-                    y_query = np.repeat(range( n_way ), n_query )
-                    topk_scores, topk_labels = scores.data.topk(1, 1, True, True)
-                    topk_ind = topk_labels.cpu().numpy()
-                    
-                    top1_correct = np.sum(topk_ind[:,0] == y_query)
-                    correct_this, count_this = float(top1_correct), len(y_query)
-                    # print (correct_this/ count_this *100)
-                    acc_all[n].append((correct_this/ count_this *100))
-
-                    if (i+1) % 50 == 0:
-                        acc_all_np = np.asarray(acc_all[n])
-                        acc_mean = np.mean(acc_all_np)
-                        acc_std = np.std(acc_all_np)
-                        print('Test Acc (%d episodes) = %4.2f%% +- %4.2f%%' %
-                            (len(acc_all[n]),  acc_mean, 1.96 * acc_std/np.sqrt(len(acc_all[n]))))
-                                ###############################################################################################
+            
+        ###############################################################################################
     acc_all_array = acc_all
-    for j in range(N-1):
-        print(classifiers[j].lam)
-        print(torch.norm(classifiers[j].lam))
-    print(classifier.lam)
-    print(torch.norm(classifier.lam))
-
-    for n in range(0,1):
+    for n in range(N-1, N):
         acc_all  = np.asarray(acc_all_array[n])
         acc_mean = np.mean(acc_all)
         acc_std  = np.std(acc_all)

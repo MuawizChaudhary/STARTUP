@@ -4,7 +4,7 @@
 # finetune.py learns a linear classifier on the features extracted from the support set 
 # compile_result.py computes the averages and the 96 confidence intervals from the results generated from finetune.py
 # and evaluate on the query set
-export CUDA_VISIBLE_DEVICES=5
+export CUDA_VISIBLE_DEVICES=7
 # Evaluate Representations trained on ImageNet
 ##############################################################################################
 
@@ -28,7 +28,7 @@ do
         --image_size 224 \
         --n_way 5 \
         --n_shot 1 5 20 \
-        --n_episode 100 \
+        --n_episode 600 \
         --n_query 15 \
         --seed 1 \
 	--freeze_backbone \
