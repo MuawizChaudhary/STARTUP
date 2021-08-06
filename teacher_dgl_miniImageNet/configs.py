@@ -1,5 +1,5 @@
 # TODO: Set the directory to save the model
-save_dir = '/local/oyallon/muawiz/models/'
+save_dir = '/local/oyallon/muawiz/models_loss_test/'
 
 # TODO: Set the directory to the miniImageNet/tieredImageNet dataset
 miniImageNet_path = '/local/common-data/few_shot_bench_data/miniImagenet/trainhold/'

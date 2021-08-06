@@ -36,7 +36,7 @@ class distLinear(nn.Module):
 
 
 class BaselineTrain(nn.Module):
-    def __init__(self, model_func, num_class, loss_type = 'dist'):
+    def __init__(self, model_func, num_class, loss_type = 'softmax'):
         super(BaselineTrain, self).__init__()
         self.feature   = model_func()
 
@@ -85,6 +85,8 @@ class BaselineTrain(nn.Module):
             logits = self.forward(X)
 
             y = y.cuda()
+           # print(torch.min(y))
+            print(y)
             loss = self.loss_fn(logits, y)
             loss.backward()
             optimizer.step()

@@ -21,26 +21,7 @@ class Linear_Layer_Local_Loss(nn.Module):
 
     def forward(self, x):
         h = self.linear(x)
-        return h, h
-
-class Classifier(nn.Module):
-  def __init__(self, channel_dim, feature_dim, num_classes, groupings):
-    super(Classifier, self).__init__()
-    self.length = len(groupings)
-    self.channel_length = channel_dim//self.length
-    self.register_buffer('groupings', torch.tensor(groupings))
-    self.linears = nn.ModuleList([nn.Linear(feature_dim*self.channel_length, num_classes) for _ in groupings])
-    self.flatten = nn.Flatten()
-
-  def forward(self, x):
-    x_p = []
-
-    # anyway to parallelize this computation?
-    for i in range(self.length):
-      selected_channels = self.flatten(x[:,i * self.channel_length: (i+1) * self.channel_length])
-      x_p.append(self.linears[i](selected_channels))
-    
-    return x_p
+        return h
 
 class Losses(nn.Module):
   def __init__(self, groupings):
@@ -123,11 +104,12 @@ class BaselineTrain(nn.Module):
         self.loss_type = loss_type  #'softmax' #'dist'
         self.num_class = num_class
         
-        self.loss_fn = nn.CrossEntropyLoss() #Losses(stuff), nn.CrossEntropyLoss()
         self.top1 = utils.AverageMeter()
 
         self.n_cnn = len(self.feature.main_cnn.blocks)
 
+        self.loss_fn = [Losses(self.feature.groupings).cuda() for i in range(self.n_cnn-1)]
+        self.loss_fn.append(nn.CrossEntropyLoss().cuda())
         self.layer_optim = optim_init(self.n_cnn, self.feature)
 
     def forward(self, x, n):
@@ -146,7 +128,6 @@ class BaselineTrain(nn.Module):
         end = time.time()
         for i, (x,y) in enumerate(train_loader):
 
-
             meters.update('Data_time', time.time() - end)
 
             representation = x.cuda(non_blocking = True)
@@ -155,8 +136,8 @@ class BaselineTrain(nn.Module):
             for n in range(self.n_cnn):
                 representation.detach_()
                 optimizer = self.layer_optim[n]
-                pred, sim, representation = self.feature(representation, n=n)
-                loss = self.loss_fn(pred, y)
+                pred, representation = self.feature(representation, n=n)
+                loss = self.loss_fn[n](pred, y)
                 loss.backward()
  
                 optimizer.step()

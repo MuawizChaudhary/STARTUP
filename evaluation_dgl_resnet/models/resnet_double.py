@@ -341,7 +341,7 @@ class SimpleBlock(nn.Module):
         return out
 
 
-def ResNet10_dgl():
+def ResNet10_double():
     return ResNet(SimpleBlock, [1,1,1,1])
 
 class Classifier(nn.Module):

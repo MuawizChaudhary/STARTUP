@@ -39,7 +39,6 @@ def create_dgl():
 model_dict = {
             'VGG11_dgl': create_dgl,
             'ResNet10_dgl': models.ResNet10_dgl,
-            'ResNet10_avg': models.ResNet10_dgl,
             'ResNet10': models.ResNet10,
             'ResNet12': create_resnet12, 
             'ResNet18': create_resnet18

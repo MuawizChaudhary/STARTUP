@@ -16,7 +16,7 @@ do
         #                                evaluating teacher model trained using teacher_miniImageNet/train.py
         # E.g. the following command evaluates the STARTUP representation on 600 tasks
         #      and save the results of the 600 tasks at results/STARTUP_miniImageNet/$source\_$target\_5way.csv
-        python eval.py \
+        python double_loss.py \
         --image_size 224 \
         --n_way 5 \
         --n_shot 1 5 20 \
@@ -28,8 +28,8 @@ do
         --source_dataset $source \
         --target_dataset $target \
         --subset_split datasets/split_seed_1/$target\_labeled_80.csv \
-        --model resnet10_dgl \
-        --embedding_load_path   /local/oyallon/muawiz/models_mlp_1_bn/checkpoints/miniImageNet/ResNet10_dgl_baseline_256_aug/399.tar\
+        --model resnet10_double \
+        --embedding_load_path   /local/oyallon/muawiz/models_loss_test/checkpoints/miniImageNet/ResNet10_dgl_baseline_256_aug/399.tar\
         --embedding_load_path_version 0
     done
 done

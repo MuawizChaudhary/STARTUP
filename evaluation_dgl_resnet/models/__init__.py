@@ -5,3 +5,4 @@ from .resnet12 import Resnet12
 from .vgg import vgg11
 from .dgl import VGGn
 from .resnet_dgl import ResNet10_dgl
+from .resnet_double import ResNet10_double
