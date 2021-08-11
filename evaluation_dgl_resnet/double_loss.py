@@ -23,10 +23,10 @@ class aux_class(nn.Module):
                                     nn.Flatten(),
                                     nn.Linear(dim, classes)
                                     )
-        self.lam = nn.Parameter(torch.zeros(1, 1), requires_grad=True)
+        #self.lam = nn.Parameter(torch.ones(1, 1), requires_grad=True)
      
     def forward(self, x):
-        x = F.normalize(self.main(x), p=2, dim=1) * F.sigmoid(self.lam)
+        x =self.main(x) #F.normalize(self.main(x), p=2, dim=1)# * F.sigmoid(self.lam)
         return x
 
 class Classifier(nn.Module):
@@ -34,12 +34,12 @@ class Classifier(nn.Module):
         super(Classifier, self).__init__()
         
         self.main = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1,1)),
-            View(dim),
-            nn.Linear(dim, n_way))
-        self.lam = nn.Parameter(torch.zeros(1, 1), requires_grad=True)
+            #nn.AdaptiveAvgPool2d((1,1)),
+            #View(dim),
+            nn.Linear(64, n_way))
+        #self.lam = nn.Parameter(torch.ones(1, 1), requires_grad=True)
     def forward(self, x):
-        x = F.normalize(self.main(x), p=2, dim=1) * F.sigmoid(self.lam)
+        x =self.main(x) #F.normalize(self.main(x), p=2, dim=1) * F.sigmoid(self.lam)
         return x
 
 
@@ -152,91 +152,89 @@ def finetune(novel_loader, params, n_shot):
         x_a_i = x_var[:, :n_support,: ,: ,:].contiguous().view(n_way*n_support, *x.size()[2:]).cuda() # (25, 3, 224, 224)
         
         in_plane = [[56, 64],[56, 64],[28, 128],[14, 256],[7, 512], [0, 128]]
- 
-        for n in range(0, N):
+        classifier =[]
+        for n in range(N):
             if n < (N-1):
-                classifier = aux_class(in_plane[n][1]*4, params.n_way)
+                classifier.append(aux_class(in_plane[n][1]*4, params.n_way).cuda())
             else:
-                classifier = Classifier(feature_dim, params.n_way)
+                classifier.append(Classifier(feature_dim, params.n_way).cuda())
 
-# start the for n
-            if params.freeze_backbone:
-                pretrained_model.eval()
-                if n < (N-1):
-                    with torch.no_grad():
-                        _, x_a_i = pretrained_model(x_a_i, n, False)
-            else:
-                pretrained_model.train()
-
-            # TODO GO ALL THE WAY TO len(main_cnn.block) - 2
-            #
-            classifier.cuda()
+# start for n
+                # TODO GO ALL THE WAY TO len(main_cnn.block) - 2
+        #
 
 
-             ###############################################################################################
-            loss_fn = nn.CrossEntropyLoss().cuda()
-            classifier_opt = torch.optim.SGD(classifier.parameters(), lr=0.01, momentum=0.9, dampening=0.9, weight_decay=0.001)
+         ###############################################################################################
+        loss_fn = nn.CrossEntropyLoss().cuda()
+        classifier_opt = [torch.optim.SGD(classifier[n].parameters(), lr=0.01,  momentum=0.9, dampening=0.9,weight_decay=0.001 ) for n in range(N)]
 
 
-            if not params.freeze_backbone:
-                delta_opt = torch.optim.SGD(filter(lambda p: p.requires_grad, pretrained_model.main_cnn.parameters()), lr=0.01)
+        if not params.freeze_backbone:
+            delta_opt = torch.optim.SGD(filter(lambda p: p.requires_grad, pretrained_model.main_cnn.parameters()), lr=0.01)
 
-            ###############################################################################################
-            total_epoch = 100
-            
-            classifier.train()
+        ###############################################################################################
+        total_epoch = 100
+        
 
-            for epoch in range(total_epoch):
-                rand_id = np.random.permutation(support_size)
+        for n in range(0,N):
+            classifier[n].train()
+        for epoch in range(total_epoch):
+            rand_id = np.random.permutation(support_size)
+ 
 
-                for j in range(0, support_size, batch_size):
-                    classifier_opt.zero_grad()
-                    if not params.freeze_backbone:
-                        delta_opt.zero_grad()
-                        
+            for j in range(0, support_size, batch_size):
+                for n in range(0, N):
+                    classifier_opt[n].zero_grad()
+                if not params.freeze_backbone:
+                    delta_opt.zero_grad()
+                    
+                x_a_i = x_var[:, :n_support,: ,: ,:].contiguous().view(n_way*n_support, *x.size()[2:]).cuda() # (25, 3, 224, 224)
 
-                    #####################################
-                    selected_id = torch.from_numpy( rand_id[j: min(j+batch_size, support_size)]).cuda()
-                   
-                    y_batch = y_a_i[selected_id]
+                #####################################
+                selected_id = torch.from_numpy( rand_id[j: min(j+batch_size, support_size)]).cuda()
+               
+                y_batch = y_a_i[selected_id]
+
+                for n in range(0,N):
+                    if params.freeze_backbone:
+                        pretrained_model.eval()
+                        with torch.no_grad():
+                            _, x_a_i = pretrained_model(x_a_i, n, False)
+                    else:
+                        pretrained_model.train()
+
+
 
                     if params.freeze_backbone:
-                        if n != N-1:
-                            output=x_a_i[selected_id]
-
-                            output = classifier(output)
-                        else:
-                            output = x_a_i[selected_id]
-                            output = classifier(output)
+                        output = x_a_i[selected_id]
+                        output = classifier[n](output)
                     else:
                         if n != N-1:
                             z_batch = x_a_i[selected_id]
                             _, output = pretrained_model(z_batch, n, False)
 
-                            output = classifier(output)
+                            output = classifier[n](output)
                         else:
                             output=x_a_i[selected_id]
-                            output = classifier(output)
+                            output = classifier[n](output)
                     loss = loss_fn(output, y_batch)
 
                     #####################################
                     loss.backward()
 
-                    classifier_opt.step()
-                    if not params.freeze_backbone:
-                        delta_opt.step()
+                    classifier_opt[n].step()
+                if not params.freeze_backbone:
+                    delta_opt.step()
 
-            pretrained_model.eval()
-            classifier.eval()
+        pretrained_model.eval()
+        for n in range(N):
+            classifier[n].eval()
+
+        for n in range(N):
 
             with torch.no_grad():
-                if n != N-1:
-                    if not params.freeze_backbone:
-                        _,x_a_i = pretrained_model(x_a_i,n, False)
-                    _,x_b_i = pretrained_model(x_b_i, n, False)
-                    scores = classifier(x_b_i)
-                else:
-                    scores = classifier(x_b_i)
+                _,x_b_i = pretrained_model(x_b_i, n, False)
+                scores = classifier[n](x_b_i)
        
             y_query = np.repeat(range( n_way ), n_query )
             topk_scores, topk_labels = scores.data.topk(1, 1, True, True)
@@ -253,8 +251,8 @@ def finetune(novel_loader, params, n_shot):
                 acc_std = np.std(acc_all_np)
                 print('Test Acc (%d episodes) = %4.2f%% +- %4.2f%%' %
                     (len(acc_all[n]),  acc_mean, 1.96 * acc_std/np.sqrt(len(acc_all[n]))))
-            
-            ###############################################################################################
+        
+        ###############################################################################################
     acc_all_array = acc_all
     for n in range(0, N):
         acc_all  = np.asarray(acc_all_array[n])

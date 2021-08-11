@@ -110,7 +110,7 @@ class BaselineTrain(nn.Module):
 
         self.loss_fn = [Losses(self.feature.groupings).cuda() for i in range(self.n_cnn-1)]
         self.loss_fn.append(nn.CrossEntropyLoss().cuda())
-        self.layer_optim = optim_init(self.n_cnn, self.feature)
+        #self.layer_optim = #optim_init(self.n_cnn, self.feature)
 
     def forward(self, x, n):
         scores = self.feature.forward(x)
@@ -118,7 +118,7 @@ class BaselineTrain(nn.Module):
         return scores
     
     def train_loop(self, epoch, train_loader, optimizer, logger):
-        print_freq = 150
+        print_freq = 130
         # avg_loss=0
 
         self.train()
@@ -132,16 +132,18 @@ class BaselineTrain(nn.Module):
 
             representation = x.cuda(non_blocking = True)
             y = y.cuda(non_blocking = True)
+            loss = torch.tensor(0.0).cuda(non_blocking = True)
 
             for n in range(self.n_cnn):
-                representation.detach_()
-                optimizer = self.layer_optim[n]
+                #representation.detach_()
+                #optimizer = self.layer_optim[n]
                 pred, representation = self.feature(representation, n=n)
-                loss = self.loss_fn[n](pred, y)
-                loss.backward()
+                loss += self.loss_fn[n](pred, y)
+                if n == self.n_cnn - 1:
+                    loss.backward()
  
-                optimizer.step()
-                optimizer.zero_grad()
+                    optimizer.step()
+                    optimizer.zero_grad()
 
             perf = utils.accuracy(pred.data,
                               y.data, topk=(1, 5))
@@ -155,7 +157,6 @@ class BaselineTrain(nn.Module):
 
             meters.update('Batch_time', time.time() - end)
             end = time.time()
-
             # avg_loss = avg_loss+loss.item()
             if (i+1) % print_freq==0:
                 #print(optimizer.state_dict()['param_groups'][0]['lr'])

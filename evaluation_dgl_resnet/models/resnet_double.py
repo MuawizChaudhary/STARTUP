@@ -510,7 +510,7 @@ class Linear_Layer_Local_Loss(nn.Module):
 
     def forward(self, x):
         h = self.linear(x)
-        return h, h
+        return h
 
 
 class Final_Layer_Local_Loss(nn.Module):
