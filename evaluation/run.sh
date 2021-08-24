@@ -4,7 +4,7 @@
 # finetune.py learns a linear classifier on the features extracted from the support set 
 # compile_result.py computes the averages and the 96 confidence intervals from the results generated from finetune.py
 # and evaluate on the query set
-export CUDA_VISIBLE_DEVICES=5
+export CUDA_VISIBLE_DEVICES=7
 # Evaluate Representations trained on ImageNet
 ##############################################################################################
 
@@ -28,7 +28,7 @@ do
         --image_size 224 \
         --n_way 5 \
         --n_shot 1 5 20 \
-        --n_episode 600 \
+        --n_episode 100 \
         --n_query 15 \
         --seed 1 \
 	--freeze_backbone \
@@ -37,7 +37,7 @@ do
         --target_dataset $target \
         --subset_split datasets/split_seed_1/$target\_labeled_80.csv \
         --model resnet10 \
-        --embedding_load_path /local/oyallon/muawiz/models/checkpoints/miniImageNet/ResNet10_baseline_256_aug/399.tar\
+        --embedding_load_path /local/oyallon/muawiz/models_wandb/checkpoints/miniImageNet/ResNet10_baseline_256_aug/399.tar\
         --embedding_load_path_version 0
         #../student_STARTUP/miniImageNet_source_rerun/$target\_unlabeled_20/checkpoint_best.pkl \
         # TODO: Please set --result_file appropriately. The prefix of the argument should be the same as $target

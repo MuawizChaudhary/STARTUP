@@ -19,7 +19,7 @@ class aux_class(nn.Module):
     def __init__(self, dim, classes):
         super(aux_class, self).__init__()
         self.main = nn.Sequential(
-                                    nn.AdaptiveAvgPool2d(2),
+        #                            nn.AdaptiveAvgPool2d(2),
                                     nn.Flatten(),
                                     nn.Linear(dim, classes)
                                     )
@@ -34,9 +34,9 @@ class Classifier(nn.Module):
         super(Classifier, self).__init__()
         
         self.main = nn.Sequential(
-            #nn.AdaptiveAvgPool2d((1,1)),
-            #View(dim),
-            nn.Linear(64, n_way))
+            nn.AdaptiveAvgPool2d((1,1)),
+            nn.Flatten(),
+            nn.Linear(dim, n_way))
         #self.lam = nn.Parameter(torch.ones(1, 1), requires_grad=True)
     def forward(self, x):
         x =self.main(x) #F.normalize(self.main(x), p=2, dim=1) * F.sigmoid(self.lam)
@@ -120,6 +120,7 @@ def finetune(novel_loader, params, n_shot):
     #sd.pop("main_cnn.blocks.9.linear.bias")
     #pretrained_model_template.update(sd_new)
     pretrained_model_template.load_state_dict(sd,strict=False)
+    pretrained_model_template.main_cnn.blocks[-1] = nn.Identity()
     print( pretrained_model_template)
 
     n_query = params.n_query
@@ -131,12 +132,8 @@ def finetune(novel_loader, params, n_shot):
    # print(pretrained_model_template)
 
     for i, (x, y) in tqdm(enumerate(novel_loader)):
-
         pretrained_model = copy.deepcopy(pretrained_model_template)
-        #Jpretrained_model.main_cnn.blocks = pretrained_model.main_cnn.blocks[:-1]
-
         pretrained_model.cuda()
-        ###############################################################################################
         x = x.cuda()
         x_var = x
 
@@ -147,7 +144,6 @@ def finetune(novel_loader, params, n_shot):
        
         y_a_i = torch.from_numpy(np.repeat(range(n_way), n_support)).cuda()
 
-        # split into support and query
         x_b_i = x_var[:, n_support:,: ,: ,:].contiguous().view(n_way*n_query, *x.size()[2:]).cuda() 
         x_a_i = x_var[:, :n_support,: ,: ,:].contiguous().view(n_way*n_support, *x.size()[2:]).cuda() # (25, 3, 224, 224)
         
@@ -155,24 +151,17 @@ def finetune(novel_loader, params, n_shot):
         classifier =[]
         for n in range(N):
             if n < (N-1):
-                classifier.append(aux_class(in_plane[n][1]*4, params.n_way).cuda())
+                classifier.append(aux_class(in_plane[n][1]*in_plane[n][0]*in_plane[n][0], params.n_way).cuda())
             else:
                 classifier.append(Classifier(feature_dim, params.n_way).cuda())
 
-# start for n
-                # TODO GO ALL THE WAY TO len(main_cnn.block) - 2
-        #
-
-
-         ###############################################################################################
-        loss_fn = nn.CrossEntropyLoss().cuda()
+        loss_fn = [nn.CrossEntropyLoss().cuda() for n in range(0,N)]
         classifier_opt = [torch.optim.SGD(classifier[n].parameters(), lr=0.01,  momentum=0.9, dampening=0.9,weight_decay=0.001 ) for n in range(N)]
 
 
         if not params.freeze_backbone:
             delta_opt = torch.optim.SGD(filter(lambda p: p.requires_grad, pretrained_model.main_cnn.parameters()), lr=0.01)
 
-        ###############################################################################################
         total_epoch = 100
         
 
@@ -203,25 +192,21 @@ def finetune(novel_loader, params, n_shot):
                     else:
                         pretrained_model.train()
 
-
-
                     if params.freeze_backbone:
                         output = x_a_i[selected_id]
                         output = classifier[n](output)
-                    else:
-                        if n != N-1:
-                            z_batch = x_a_i[selected_id]
-                            _, output = pretrained_model(z_batch, n, False)
+                    #else:
+                    #    if n != N-1:
+                    #        z_batch = x_a_i[selected_id]
+                    #        _, output = pretrained_model(z_batch, n, False)
 
-                            output = classifier[n](output)
-                        else:
-                            output=x_a_i[selected_id]
-                            output = classifier[n](output)
-                    loss = loss_fn(output, y_batch)
+                    #        output = classifier[n](output)
+                    #    else:
+                    #        output=x_a_i[selected_id]
+                    #        output = classifier[n](output)
 
-                    #####################################
+                    loss = loss_fn[n](output, y_batch)
                     loss.backward()
-
                     classifier_opt[n].step()
                 if not params.freeze_backbone:
                     delta_opt.step()

@@ -47,7 +47,7 @@ class distLinear(nn.Module):
 class Classifier(nn.Module):
     def __init__(self, dim, n_way):
         super(Classifier, self).__init__()
-        self.fc = distLinear(dim, n_way) #nn.Linear(dim, n_way) #
+        self.fc = nn.Linear(dim, n_way) #   distLinear(dim, n_way) #
 
     def forward(self, x):
         x = self.fc(x)

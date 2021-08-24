@@ -128,6 +128,42 @@ class auxillary_conv_classifier(nn.Module):
         return out
 
 
+class aux_class(nn.Module):
+    def __init__(self, dim, classes):
+        super(aux_class, self).__init__()
+        self.main = nn.Sequential(
+                                    #nn.AdaptiveAvgPool2d(2),
+                                    nn.Flatten(),
+                                    nn.Linear(dim, classes)
+                                    )
+        #self.lam = nn.Parameter(torch.ones(1, 1), requires_grad=True)
+     
+    def forward(self, x):
+        x =self.main(x) #F.normalize(self.main(x), p=2, dim=1)# * F.sigmoid(self.lam)
+        return x
+
+#class Classifier(nn.Module):
+#    def __init__(self, dim, n_way):
+#        super(Classifier, self).__init__()
+#        
+#        self.main = nn.Sequential(
+#            #nn.AdaptiveAvgPool2d((1,1)),
+#            #View(dim),
+#            nn.Linear(64, n_way))
+#        #self.lam = nn.Parameter(torch.ones(1, 1), requires_grad=True)
+#    def forward(self, x):
+#        x =self.main(x) #F.normalize(self.main(x), p=2, dim=1) * F.sigmoid(self.lam)
+#        return x
+
+
+class View(nn.Module):
+    def __init__(self, *args):
+        super(View, self).__init__()
+        self.shape = args
+
+    def forward(self, x):
+        return x.view(x.shape[0], -1)
+
 
 class distLinear(nn.Module):
     def __init__(self, indim, outdim):
@@ -159,7 +195,11 @@ class Classifier(nn.Module):
     def __init__(self, dim, n_way):
         super(Classifier, self).__init__()
         self.fc = nn.Linear(dim, n_way)#distLinear(dim, n_way) #
-
+        #self.fc = nn.Sequential(
+        #    nn.AdaptiveAvgPool2d((1,1)),
+        #    nn.Flatten(),
+        #    nn.Linear(dim, n_way))
+ 
     def forward(self, x):
         x = self.fc(x)
         return x
@@ -243,14 +283,14 @@ def finetune(novel_loader, params, n_shot):
             if n == 5:
                 classifiers.append(Classifier(feature_dim, params.n_way))
             else:
-                classifiers.append(
-                    auxillary_conv_classifier(in_size=in_plane[n][0],
-                                          input_features=in_plane[n][1],
-                                          n_mlp=0,
-                                          bn=False,
-                                          pooling='adaptiveavg',
-                                          loss_sup='pred',
-                                          num_classes=params.n_way))
+                classifiers.append(aux_class(in_plane[n][1]*in_plane[n][0]*in_plane[n][0], params.n_way))
+                    #auxillary_conv_classifier(in_size=in_plane[n][0],
+                    #                      input_features=in_plane[n][1],
+                    #                      n_mlp=0,
+                    #                      bn=False,
+                    #                      pooling='adaptiveavg',
+                    #                      loss_sup='pred',
+                    #                      num_classes=params.n_way))
         for n in range(0,N):
             classifiers[n].cuda().train()
         ###############################################################################################

@@ -344,26 +344,37 @@ class SimpleBlock(nn.Module):
 def ResNet10_dgl():
     return ResNet(SimpleBlock, [1,1,1,1])
 
+#class Classifier(nn.Module):
+#  def __init__(self, channel_dim, feature_dim, num_classes, groupings):
+#    super(Classifier, self).__init__()
+#    self.length = len(groupings)
+#    self.channel_length = channel_dim//self.length
+#    self.register_buffer('groupings', torch.tensor(groupings))
+#    print(groupings)
+#    self.linears = nn.ModuleList([nn.Linear(feature_dim*self.channel_length, num_classes) for _ in groupings])
+#    self.flatten = nn.Flatten()
+#
+#  def forward(self, x):
+#    x_p = []
+#
+#    # anyway to parallelize this computation?
+#    for i in range(self.length):
+#      selected_channels = self.flatten(x[:,i * self.channel_length: (i+1) * self.channel_length])
+#      x_p.append(self.linears[i](selected_channels))
+#    
+#    return x_p
+
 class Classifier(nn.Module):
-  def __init__(self, channel_dim, feature_dim, num_classes, groupings):
+  def __init__(self, channel_dim, feature_dim, num_classes, num_blocks):
     super(Classifier, self).__init__()
-    self.length = len(groupings)
-    self.channel_length = channel_dim//self.length
-    self.register_buffer('groupings', torch.tensor(groupings))
-    print(groupings)
-    self.linears = nn.ModuleList([nn.Linear(feature_dim*self.channel_length, num_classes) for _ in groupings])
-    self.flatten = nn.Flatten()
+    self.aux_classifier = nn.Sequential( 
+            #nn.AdaptiveAvgPool2d((2)),
+            nn.Flatten(),
+            nn.Linear(channel_dim*feature_dim, num_classes)
+            )
 
   def forward(self, x):
-    x_p = []
-
-    # anyway to parallelize this computation?
-    for i in range(self.length):
-      selected_channels = self.flatten(x[:,i * self.channel_length: (i+1) * self.channel_length])
-      x_p.append(self.linears[i](selected_channels))
-    
-    return x_p
-
+    return self.aux_classifier(x)
 
 
 
@@ -439,7 +450,7 @@ class ResNet(nn.Module):
                 blocks.append(base_blocks[i])
                 in_size, planes = self.auxillary_size_tracker[i] 
                 print(in_size, planes, num_classes)
-                self.auxillary_nets.append(Classifier(planes, in_size*in_size, num_classes, groupings))
+                self.auxillary_nets.append(Classifier(planes, in_size*in_size, num_classes,len(base_blocks))) #len(base_blocks)))
 
 
                 #self.auxillary_nets.append(

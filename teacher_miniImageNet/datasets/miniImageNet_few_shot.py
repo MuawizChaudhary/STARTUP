@@ -42,11 +42,16 @@ def construct_subset(dataset, split):
 identity = lambda x:x
 
 class SimpleDataset:
-    def __init__(self, transform, target_transform=identity, split=None):
+    def __init__(self, transform, target_transform=identity, split=None, train_or_val=True):
         self.transform = transform
         self.target_transform = target_transform
         self.split = None
-        self.d = ImageFolder(configs.miniImageNet_path, transform=self.transform, 
+        if train_or_val:
+            dir_path = "trainhold"
+        else: 
+            dir_path = "validation"
+        
+        self.d = ImageFolder(configs.miniImageNet_path+dir_path, transform=self.transform, 
                         target_transform=self.target_transform)
 
         if split is not None:
@@ -148,14 +153,15 @@ class SimpleDataManager(DataManager):
         self.trans_loader = TransformLoader(image_size)
         self.split = split
 
-    def get_data_loader(self, aug, num_workers=8): #parameters that would change on train/val set
+    def get_data_loader(self, aug, train_or_val=True, num_workers=8): #parameters that would change on train/val set
         transform = self.trans_loader.get_composed_transform(aug)
-        dataset = SimpleDataset(transform, split=self.split)
+        dataset = SimpleDataset(transform, split=self.split, train_or_val=train_or_val)
 
         data_loader_params = dict(batch_size=self.batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)       
         data_loader = torch.utils.data.DataLoader(dataset, **data_loader_params)
 
         return data_loader
+
 
 class SetDataManager(DataManager):
     def __init__(self, image_size, n_way=5, n_support=5, n_query=16, n_eposide = 100, split=None):        

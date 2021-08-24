@@ -176,17 +176,17 @@ class BaselineTrain(nn.Module):
             end = time.time()
 
             # avg_loss = avg_loss+loss.item()
-            if (i+1) % print_freq==0:
-                #print(optimizer.state_dict()['param_groups'][0]['lr'])
-                print('Epoch {:d} | Batch {:d}/{:d} | Top1 Avg {:f} | Top5 Avg {:f}'.format(epoch, i, len(train_loader), meters.__getitem__('top1'), meters.__getitem__('top5')))
-                logger_string = ('Training Epoch: [{epoch}] Step: [{step} / {steps}] Batch Time: {meters[Batch_time]:.4f} '
-                             'Data Time: {meters[Data_time]:.4f} Average Loss: {meters[Loss]:.4f} '
-                             'Top1: {meters[top1]:.4f} Top5: {meters[top5]:.4f} '
-                             'Top1_per_class: {meters[top1_per_class]:.4f} '
-                             'Top5_per_class: {meters[top5_per_class]:.4f} ').format(
-                    epoch=epoch, step=i+1, steps=len(train_loader), meters=meters)
+            #if (i+1) % print_freq==0:
+            #    #print(optimizer.state_dict()['param_groups'][0]['lr'])
+            #    print('Epoch {:d} | Batch {:d}/{:d} | Top1 Avg {:f} | Top5 Avg {:f}'.format(epoch, i, len(train_loader), meters.__getitem__('top1'), meters.__getitem__('top5')))
+            #    logger_string = ('Training Epoch: [{epoch}] Step: [{step} / {steps}] Batch Time: {meters[Batch_time]:.4f} '
+            #                 'Data Time: {meters[Data_time]:.4f} Average Loss: {meters[Loss]:.4f} '
+            #                 'Top1: {meters[top1]:.4f} Top5: {meters[top5]:.4f} '
+            #                 'Top1_per_class: {meters[top1_per_class]:.4f} '
+            #                 'Top5_per_class: {meters[top5_per_class]:.4f} ').format(
+            #        epoch=epoch, step=i+1, steps=len(train_loader), meters=meters)
 
-                logger.info(logger_string)
+            #    logger.info(logger_string)
         
         logger_string = ('Training Epoch: [{epoch}] Step: [{step}] Batch Time: {meters[Batch_time]:.4f} '
                      'Data Time: {meters[Data_time]:.4f} Average Loss: {meters[Loss]:.4f} '
@@ -199,7 +199,41 @@ class BaselineTrain(nn.Module):
 
         return meters.averages()
 
-            
-    def test_loop(self, val_loader):
-        return -1 #no validation, just save model during iteration
+                   
+    def test_loop(self, val_loader, epoch, logger):
+        self.eval()
 
+        meters = utils.AverageMeterSet()
+
+        with torch.no_grad():
+            end = time.time()
+            for i, (X,y) in enumerate(val_loader):
+                meters.update('Data_time', time.time() - end)
+                X = X.cuda()
+                y = y.cuda()
+                logits = self.forward(X)
+
+               # print(torch.min(y))
+                perf = utils.accuracy(logits.data,
+                                  y.data, topk=(1, 5))
+
+                meters.update('top1', perf['average'][0].item(), len(X))
+                meters.update('top5', perf['average'][1].item(), len(X))
+
+                meters.update('top1_per_class', perf['per_class_average'][0].item(), 1)
+                meters.update('top5_per_class', perf['per_class_average'][1].item(), 1)
+
+                meters.update('Batch_time', time.time() - end)
+                end = time.time()
+
+            logger_string = ('Test Epoch: [{epoch}] Step: [{step}] Batch Time: {meters[Batch_time]:.4f} '
+                         'Data Time: {meters[Data_time]:.4f} '
+                         'Top1: {meters[top1]:.4f} Top5: {meters[top5]:.4f} '
+                         'Top1_per_class: {meters[top1_per_class]:.4f} '
+                         'Top5_per_class: {meters[top5_per_class]:.4f} ').format(
+                        epoch=epoch+1, step=0, meters=meters)
+
+            logger.info(logger_string)
+
+
+        return meters.averages()#no validation, just save model during iteration 

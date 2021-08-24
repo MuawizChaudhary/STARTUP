@@ -27,10 +27,18 @@ def train(base_loader, model, optimization, start_epoch, stop_epoch, params, log
         optimizer = torch.optim.Adam(model.parameters())
     else:
        raise ValueError('Unknown optimization, please define by yourself')     
-
+    datamgr = miniImageNet_few_shot
+    train_dataloader = datamgr.SimpleDataManager(224, params.bsize).get_data_loader(aug=False, train_or_val=True)
+    val_dataloader = datamgr.SimpleDataManager(224, params.bsize).get_data_loader(aug=False, train_or_val=False)
+ 
     for epoch in tqdm(range(start_epoch,stop_epoch)):
         model.train()
         perf = model.train_loop(epoch, base_loader, optimizer, logger) 
+        wandb.log({'train_loss': perf['Loss/avg']}, step=epoch+1)
+        perf_val = model.test_loop(val_dataloader, epoch, logger)
+        perf = model.test_loop(train_dataloader, epoch, logger)
+
+
 
         if not os.path.isdir(params.checkpoint_dir):
             os.makedirs(params.checkpoint_dir)
@@ -40,11 +48,15 @@ def train(base_loader, model, optimization, start_epoch, stop_epoch, params, log
             torch.save({'epoch':epoch, 'state':model.state_dict(), 
                         'optimizer': optimizer.state_dict()}, outfile)
 
-        wandb.log({'loss': perf['Loss/avg']}, step=epoch+1)
-        wandb.log({'top1': perf['top1/avg'],
-                'top5': perf['top5/avg'],
-                'top1_per_class': perf['top1_per_class/avg'],
-                'top5_per_class': perf['top5_per_class/avg']}, step=epoch+1)
+        wandb.log({'train_top1': perf['top1/avg'],
+                'train_top5': perf['top5/avg'],
+                'train_top1_per_class': perf['top1_per_class/avg'],
+                'train_top5_per_class': perf['top5_per_class/avg']}, step=epoch+1)
+
+        wandb.log({'test_top1': perf_val['top1/avg'],
+                'test_top5': perf_val['top5/avg'],
+                'test_top1_per_class': perf_val['top1_per_class/avg'],
+                'test_top5_per_class': perf_val['top5_per_class/avg']}, step=epoch+1)
         
     return model
 
@@ -101,7 +113,7 @@ if __name__=='__main__':
             params.num_classes = 1000
         else:
            raise ValueError('Unknown dataset')
-
+        print(params.model)
         model = BaselineTrain(model_dict[params.model], params.num_classes)
 
     elif params.method in ['protonet']:
@@ -134,9 +146,11 @@ if __name__=='__main__':
                name=f'{__file__}_{params.checkpoint_dir}')
 
     wandb.config.update(params)
+    wandb.watch(model)
+
 
     model = model.cuda()
-    print(model)
+    #print(model)
 
     start_epoch = params.start_epoch
     stop_epoch = params.stop_epoch

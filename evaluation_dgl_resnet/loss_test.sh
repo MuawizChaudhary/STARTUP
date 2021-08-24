@@ -4,7 +4,7 @@
 # finetune.py learns a linear classifier on the features extracted from the support set 
 # compile_result.py computes the averages and the 96 confidence intervals from the results generated from finetune.py
 # and evaluate on the query set
-export CUDA_VISIBLE_DEVICES=7
+export CUDA_VISIBLE_DEVICES=6
 for source in "miniImageNet"
 do
     for target in  "EuroSAT" 
@@ -29,7 +29,7 @@ do
         --target_dataset $target \
         --subset_split datasets/split_seed_1/$target\_labeled_80.csv \
         --model resnet10_double \
-        --embedding_load_path   /local/oyallon/muawiz/models_loss_test/checkpoints/miniImageNet/ResNet10_dgl_baseline_256_aug/399.tar\
+        --embedding_load_path   /local/oyallon/muawiz/models_wandb_losses_1/checkpoints/miniImageNet/ResNet10_dgl_baseline_256_aug/399.tar\
         --embedding_load_path_version 0
     done
 done
