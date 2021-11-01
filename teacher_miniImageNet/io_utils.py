@@ -42,7 +42,7 @@ def parse_args(script):
     parser.add_argument('--n_shot'      , default=5, type=int,  help='number of labeled data in each class, same as n_support') 
     parser.add_argument('--train_aug'   , action='store_true',  help='perform data augmentation or not during training ') 
     parser.add_argument('--freeze_backbone'   , action='store_true', help='Freeze the backbone network for finetuning')
-    parser.add_argument('--seed', default=1, type=int, help='random seed')
+    parser.add_argument('--seed', default=42, type=int, help='random seed')
     parser.add_argument('--bsize', default=256, type=int, help='batchsize for supervised training') 
 
     parser.add_argument('--models_to_use', '--names-list', nargs='+', default=['miniImageNet', 'caltech256', 'DTD', 'cifar100', 'CUB'], help='pretained model to use')

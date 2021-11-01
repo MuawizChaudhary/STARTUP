@@ -17,115 +17,18 @@ import argparse
 import random
 import copy
 import warnings
-class auxillary_conv_classifier(nn.Module):
-    def __init__(self, input_features=256, in_size=32, cnn=False,
-                 num_classes=10, n_mlp=0, n_conv=0, loss_sup="pred", 
-                 dim_in_decoder_arg=2048, pooling="avg",
-                 bn=False, dropout=0.0):
-        super(auxillary_conv_classifier, self).__init__()
-        self.in_size = in_size
-        self.cnn = cnn
-        feature_size = input_features
-        self.loss_sup = loss_sup
-        input_features = in_size
-        in_size = feature_size
-        self.dim_in_decoder = dim_in_decoder_arg
-        self.pooling = pooling
-        self.pool = nn.Identity()
-        self.blocks = []
-        
-        for n in range(n_conv):
-            if bn:
-                bn_temp = nn.BatchNorm2d(feature_size)
-            else:
-                bn_temp = nn.Identity()
-
-            relu_temp = nn.ReLU(True)
-
-            conv = nn.Conv2d(feature_size, feature_size,
-                                 kernel_size=1, stride=1, padding=0, bias=False)
-
-            self.blocks.append(nn.Sequential(conv, bn_temp, relu_temp))
-        self.blocks = nn.ModuleList(self.blocks)
-
-        if (loss_sup == 'pred' or loss_sup == 'predsim' or loss_sup =='zero') and pooling == "avg":
-            # Resolve average-pooling kernel size in order for flattened dim to match args.dim_in_decoder
-            ks_h, ks_w = 1, 1
-            dim_out_h, dim_out_w = input_features, input_features
-            self.dim_in_decoder = in_size * dim_out_h * dim_out_w
-            while self.dim_in_decoder > dim_in_decoder_arg and ks_h < input_features:
-                ks_h *= 2
-                dim_out_h = math.ceil(input_features / ks_h)
-                self.dim_in_decoder = in_size * dim_out_h * dim_out_w
-                if self.dim_in_decoder > dim_in_decoder_arg:
-                    ks_w *= 2
-                    dim_out_w = math.ceil(input_features / ks_w)
-                    self.dim_in_decoder = in_size * dim_out_h * dim_out_w
-            if ks_h > 1 or ks_w > 1:
-                pad_h = (ks_h * (dim_out_h - input_features // ks_h)) // 2
-                pad_w = (ks_w * (dim_out_w - input_features // ks_w)) // 2
-                self.pool = nn.AvgPool2d((ks_h, ks_w), padding=(pad_h, pad_w))
-                self.bn = nn.Identity()
-            else:
-                self.pool = nn.Identity()
-                self.bn = nn.Identity()
-
-        if pooling == "adaptiveavg":
-            self.dim_in_decoder = feature_size*4
-            self.pre_conv_pool = nn.AdaptiveAvgPool2d((math.ceil(self.in_size / 4), math.ceil(self.in_size / 4)))
-            #self.pool = nn.AvgPool2d((2, 2))
-            self.pool = nn.AdaptiveAvgPool2d((2, 2))
-        else:
-            self.pre_conv_pool = nn.Identity()
-
-        if n_mlp > 0:
-            mlp_feat = self.dim_in_decoder
-
-            layers = []
-
-            for l in range(n_mlp):
-                if bn:
-                    bn_temp = nn.BatchNorm1d(mlp_feat)
-                else:
-                    bn_temp = nn.Identity()
-                dropout_temp = torch.nn.Dropout(p=dropout, inplace=False)
-                layers += [nn.Linear(mlp_feat, mlp_feat),
-                           bn_temp, nn.ReLU(True), dropout_temp]
-
-            self.mlp = True
-            self.preclassifier = nn.Sequential(*layers)
-            self.classifier = nn.Linear(mlp_feat, num_classes)
-            self.classifier.weight.data.zero_()
-            if loss_sup == 'predsim':
-                self.sim_loss = nn.Conv2d(feature_size, feature_size, 3, stride=1, padding=1, bias=False)
-
-        else:
-            self.mlp = False
-            self.preclassifier = nn.Identity()
-            self.classifier = nn.Linear(self.dim_in_decoder, num_classes)
-            self.classifier.weight.data.zero_()
-            if loss_sup == 'predsim':
-                self.sim_loss = nn.Conv2d(feature_size, feature_size, 3, stride=1, padding=1, bias=False)
-
-        if not bn and not self.mlp:
-            self.bn = nn.Identity()
-        else:
-            self.bn = nn.BatchNorm2d(feature_size)
+class aux_class(nn.Module):
+    def __init__(self, dim, classes):
+        super(aux_class, self).__init__()
+        self.main = nn.Sequential(
+                nn.AdaptiveAvgPool2d(1),
+                nn.Flatten(),
+                nn.Linear(dim, classes)
+                )
 
     def forward(self, x):
-        out = None
-        loss_sim = None
-        if self.loss_sup == "predsim":
-            loss_sim = self.sim_loss(x)
-
-        x = self.pre_conv_pool(x)
-        for block in self.blocks:
-            x = block(x)
-        out = self.pool(x)
-        out = out.view(out.size(0), -1)
-        out = self.preclassifier(out)
-        out = self.classifier(out)
-        return out
+        x = self.main(x)
+        return x
 
 
 
@@ -163,6 +66,14 @@ class Classifier(nn.Module):
     def forward(self, x):
         x = self.fc(x)
         return x
+
+class Remove(nn.Module):
+    def __init__(self):
+        super(Remove, self).__init__()
+        self.fc = nn.Identity()
+
+    def forward(self, x):
+        return self.fc(x)
 
 def finetune(novel_loader, params, n_shot): 
 
@@ -231,7 +142,9 @@ def finetune(novel_loader, params, n_shot):
     for i, (x, y) in tqdm(enumerate(novel_loader)):
 
         pretrained_model = copy.deepcopy(pretrained_model_template)
+        pretrained_model.trunk[-2] = Remove() #nn.AdaptiveAvgPool2d(1)#
 
+        pretrained_model.trunk[-1] = nn.Identity() #nn.AdaptiveAvgPool2d(2)
         classifier = Classifier(feature_dim, params.n_way)
 
         pretrained_model.cuda()
@@ -241,16 +154,10 @@ def finetune(novel_loader, params, n_shot):
         
         for n in range(0,N):
             if n == 5:
-                classifiers.append(Classifier(feature_dim, params.n_way))
-            else:
-                classifiers.append(
-                    auxillary_conv_classifier(in_size=in_plane[n][0],
-                                          input_features=in_plane[n][1],
-                                          n_mlp=0,
-                                          bn=False,
-                                          pooling='adaptiveavg',
-                                          loss_sup='pred',
-                                          num_classes=params.n_way))
+                a = aux_class(in_plane[-1][1], params.n_way)
+                classifiers.append(a)#Classifier(feature_dim*4, params.n_way))
+            else:# **in_plane[n][0]*in_plane[n][0]
+                classifiers.append(aux_class(in_plane[n][1], params.n_way))
         for n in range(0,N):
             classifiers[n].cuda().train()
         ###############################################################################################
@@ -283,6 +190,7 @@ def finetune(novel_loader, params, n_shot):
             
 
             if not params.freeze_backbone:
+                print('fsd')
                 delta_opt = torch.optim.SGD(filter(lambda p: p.requires_grad, pretrained_model.parameters()), lr=0.01)
 
             ###############################################################################################
@@ -310,7 +218,8 @@ def finetune(novel_loader, params, n_shot):
                         z_batch = x_a_i[selected_id]
                         output = m(z_batch)
 
-                    if m.__class__.__name__ == "SimpleBlock" or m.__class__.__name__ == "MaxPool2d" or m.__class__.__name__=="Flatten":
+                    if m.__class__.__name__ == "SimpleBlock" or m.__class__.__name__ == "MaxPool2d" or m.__class__.__name__=="Flatten" or m.__class__.__name__=="Identity":
+
                         classifiers[n].train()
                         output = classifiers[n](output)
                         loss = loss_fn[n](output, y_batch)
@@ -328,7 +237,7 @@ def finetune(novel_loader, params, n_shot):
                 x_b_i = m(x_b_i)
                 if not params.freeze_backbone:
                     x_a_i = m(x_a_i)
-                if m.__class__.__name__ == "SimpleBlock" or m.__class__.__name__ == "MaxPool2d" or m.__class__.__name__=="Flatten":
+                if m.__class__.__name__ == "SimpleBlock" or m.__class__.__name__ == "MaxPool2d" or m.__class__.__name__=="Flatten" or m.__class__.__name__=="Identity":
                     classifiers[n].eval()
                     scores = classifiers[n](x_b_i)
        

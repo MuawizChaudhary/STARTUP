@@ -87,14 +87,18 @@ def finetune(novel_loader, params, n_shot):
 
         if 'epoch' in sd:
             print("Model checkpointed at epoch: ", sd['epoch'])
-        print(sd.keys())
         if 'model' in sd:
             sd = sd['model']
         elif 'state_dict' in sd:
             sd = sd['state_dict']
         else:
             sd = sd
-
+        sd["layer0.0.weight"] = sd["conv1.weight"]
+        sd["layer0.1.weight"] = sd["bn1.weight"]
+        sd["layer0.1.bias"] = sd["bn1.bias"]
+        sd["layer0.1.running_mean"] = sd["bn1.running_mean"]
+        sd["layer0.1.running_var"] = sd["bn1.running_var"]
+        sd["layer0.1.num_batches_tracked"] =  sd["bn1.num_batches_tracked"]
     # elif params.embedding_load_path_version == 3:
     #     state = torch.load(params.embedding_load_path)
     #     print("Model checkpointed at epoch: ", state['epoch'])

@@ -11,7 +11,7 @@ def init_layer(L):
     if isinstance(L, nn.Conv2d):
         n = L.kernel_size[0]*L.kernel_size[1]*L.out_channels
         L.weight.data.normal_(0,math.sqrt(2.0/float(n)))
-    elif isinstance(L, nn.BatchNorm2d):
+    elif isinstance(L, nn.BatchNorm2d) and L.affine:
         L.weight.data.fill_(1)
         L.bias.data.fill_(0)
 
@@ -29,12 +29,14 @@ class SimpleBlock(nn.Module):
         super(SimpleBlock, self).__init__()
         self.indim = indim
         self.outdim = outdim
+        setBN = True
+        #self.alpha = 0.5
 
         self.C1 = nn.Conv2d(indim, outdim, kernel_size=3, stride=2 if half_res else 1, padding=1, bias=False)
-        self.BN1 = nn.BatchNorm2d(outdim)
+        self.BN1 = nn.BatchNorm2d(outdim, affine=setBN)
     
         self.C2 = nn.Conv2d(outdim, outdim,kernel_size=3, padding=1,bias=False)
-        self.BN2 = nn.BatchNorm2d(outdim)
+        self.BN2 = nn.BatchNorm2d(outdim, affine=setBN)
 
         self.relu1 = nn.ReLU(inplace=True)
         self.relu2 = nn.ReLU(inplace=True)
@@ -47,7 +49,7 @@ class SimpleBlock(nn.Module):
         if indim!=outdim:
 
             self.shortcut = nn.Conv2d(indim, outdim, 1, 2 if half_res else 1, bias=False)
-            self.BNshortcut = nn.BatchNorm2d(outdim)
+            self.BNshortcut = nn.BatchNorm2d(outdim, affine=setBN)
 
             self.parametrized_layers.append(self.shortcut)
             self.parametrized_layers.append(self.BNshortcut)
@@ -130,7 +132,8 @@ class ResNet(nn.Module):
 
         conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
                                            bias=False)
-        bn1 = nn.BatchNorm2d(64)
+        setBN = True
+        bn1 = nn.BatchNorm2d(64, affine=setBN)
 
         relu = nn.ReLU()
         pool1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)

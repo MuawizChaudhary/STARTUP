@@ -86,7 +86,6 @@ class BaselineTrain(nn.Module):
 
             y = y.cuda()
            # print(torch.min(y))
-            print(y)
             loss = self.loss_fn(logits, y)
             loss.backward()
             optimizer.step()

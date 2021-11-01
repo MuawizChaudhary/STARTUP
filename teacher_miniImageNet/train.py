@@ -48,6 +48,19 @@ def train(base_loader, model, optimization, start_epoch, stop_epoch, params, log
         
     return model
 
+
+def replace_layers(model, old, new):
+    for n, module in model.named_children():
+        if len(list(module.children())) > 0:
+            ## compound module, go inside it
+            replace_layers(module, old, new)
+            
+        if isinstance(module, old):
+            ## simple module
+            setattr(model, n, new)
+
+
+
 if __name__=='__main__':
     params = parse_args('train')
     image_size = 224
@@ -136,6 +149,8 @@ if __name__=='__main__':
     wandb.config.update(params)
 
     model = model.cuda()
+    #replace_layers(model, nn.BatchNorm2d, nn.Identity())
+    print(model)
 
     start_epoch = params.start_epoch
     stop_epoch = params.stop_epoch

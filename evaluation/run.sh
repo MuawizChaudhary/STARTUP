@@ -4,7 +4,7 @@
 # finetune.py learns a linear classifier on the features extracted from the support set 
 # compile_result.py computes the averages and the 96 confidence intervals from the results generated from finetune.py
 # and evaluate on the query set
-export CUDA_VISIBLE_DEVICES=5
+export CUDA_VISIBLE_DEVICES=2
 # Evaluate Representations trained on ImageNet
 ##############################################################################################
 
@@ -15,7 +15,7 @@ export CUDA_VISIBLE_DEVICES=5
 ## Before running the commands, please take care of the TODO appropriately"miniImageNet_test"
 for source in "miniImageNet"
 do
-    for target in "EuroSAT"  #"ChestX"
+    for target in "CropDisease" "EuroSAT" #"ChestX" "CropDisease" 
     do
         # TODO: Please set the following argument appropriately "ChestX"
         # --save_dir: directory to save the results from evaluation#j  "ChestX" "ISIC"
@@ -27,17 +27,16 @@ do
         python finetune.py \
         --image_size 224 \
         --n_way 5 \
-        --n_shot 1 5 20 \
+        --n_shot 1  \
         --n_episode 600 \
         --n_query 15 \
         --seed 1 \
-	--freeze_backbone \
         --save_dir results/STARTUP_miniImageNet \
         --source_dataset $source \
         --target_dataset $target \
         --subset_split datasets/split_seed_1/$target\_labeled_80.csv \
         --model resnet10 \
-        --embedding_load_path /local/oyallon/muawiz/models/checkpoints/miniImageNet/ResNet10_baseline_256_aug/399.tar\
+        --embedding_load_path  /home/oyallon/muawiz/FewShotMedical/fewshot_medical_imaging/fewshot_medical_imaging/BMS/logs/baseline/checkpoint_best.pkl \
         --embedding_load_path_version 0
         #../student_STARTUP/miniImageNet_source_rerun/$target\_unlabeled_20/checkpoint_best.pkl \
         # TODO: Please set --result_file appropriately. The prefix of the argument should be the same as $target
@@ -46,9 +45,14 @@ do
         #       and saves them to results/STARTUP_miniImageNet/$source\_$target\_5way_compiled.csv
         #python compile_result.py jj
         #python compile_result.py 
+        #
+        #--embedding_load_path  /home/oyallon/muawiz/FewShotMedical/fewshot_medical_imaging/fewshot_medical_imaging/STARTUP/evaluation/models_no_affine/399.tar \
+        #--freeze_backbone \
     done
 done
 ##
+#	--freeze_backbone \
+        # /local/oyallon/muawiz/models_final/checkpoints/miniImageNet/ResNet10_baseline_256_aug/399.tar  \
 
 # Before running the commands, please take care of the TODO appropriately
 #for source in "ImageNet"
