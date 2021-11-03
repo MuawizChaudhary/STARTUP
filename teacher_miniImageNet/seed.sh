@@ -2,7 +2,7 @@
 
 #  eval "$(conda shell.bash hook)"
 #   conda activate venvfewshot
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=3
 
 # training a classification model on miniImageNet
 python train.py --dataset miniImageNet --model ResNet10 --seed 1  --method baseline --bsize 256 --start_epoch 0 --stop_epoch 400 --train_aug 

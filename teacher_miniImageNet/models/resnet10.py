@@ -29,7 +29,7 @@ class SimpleBlock(nn.Module):
         super(SimpleBlock, self).__init__()
         self.indim = indim
         self.outdim = outdim
-        setBN = True
+        setBN = False
         #self.alpha = 0.5
 
         self.C1 = nn.Conv2d(indim, outdim, kernel_size=3, stride=2 if half_res else 1, padding=1, bias=False)
@@ -132,7 +132,7 @@ class ResNet(nn.Module):
 
         conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
                                            bias=False)
-        setBN = True
+        setBN = False
         bn1 = nn.BatchNorm2d(64, affine=setBN)
 
         relu = nn.ReLU()
